@@ -1,23 +1,43 @@
+"use client";
+
 import { PageHeader } from "@/components/layout/page-header";
-import { AccountCard } from "@/components/accounts/account-card";
+import { PlatformCard } from "@/components/accounts/account-card";
 import { ConnectCard } from "@/components/accounts/connect-card";
-import { mockAccounts } from "@/lib/mock-data";
+import { ConnectionLimitWidget } from "@/components/accounts/connection-limit";
+import { mockPlatformConnections } from "@/lib/mock-data";
+import { useNangoConnect } from "@/hooks/use-nango-connect";
 
 export default function AccountsPage() {
-  const connectedCount = mockAccounts.filter((a) => a.status === "connected").length;
-  const maxAccounts = 10;
+  const nango = useNangoConnect();
+
+  // Merge real Instagram state into mock connections
+  const connections = mockPlatformConnections.map((conn) => {
+    if (conn.id === "ig" && nango.connection?.connected) {
+      return { ...conn, connected: true };
+    }
+    return conn;
+  });
 
   return (
     <div>
-      <PageHeader title="Accounts" description="Manage your connected Instagram accounts">
-        <span className="text-sm border border-[#1E3A5F] rounded-full px-3 py-1.5 text-gray-300">
-          {connectedCount}/{maxAccounts} connected
-        </span>
+      <PageHeader title="Accounts" description="Connect and manage your social media accounts">
+        <ConnectionLimitWidget connectedCount={nango.connection?.connected ? 1 : 0} />
       </PageHeader>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {mockAccounts.map((account) => (
-          <AccountCard key={account.id} account={account} />
+        {connections.map((connection) => (
+          <PlatformCard
+            key={connection.id}
+            connection={connection}
+            {...(connection.id === "ig"
+              ? {
+                  onConnect: nango.connect,
+                  onDisconnect: nango.disconnect,
+                  isConnecting: nango.isConnecting,
+                  igUsername: nango.connection?.username,
+                }
+              : {})}
+          />
         ))}
         <ConnectCard />
       </div>

@@ -12,17 +12,17 @@ export function ContentMixConfig() {
   const [postsPerDay, setPostsPerDay] = useState("3");
 
   return (
-    <div className="rounded-xl bg-[#16213E] border border-[#1E3A5F] p-6">
-      <h3 className="font-semibold mb-2 text-white">Content Mix</h3>
-      <p className="text-sm text-gray-400 mb-6">
+    <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
+      <h3 className="font-semibold mb-2 text-[#F8FAFC]">Content Mix</h3>
+      <p className="text-sm text-[#94A3B8] mb-6">
         Set the ratio of content types in your feed
       </p>
 
       <div className="space-y-4">
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Educational</span>
-            <span className="text-sm text-gray-400">{educational[0]}%</span>
+            <span className="text-sm text-[#94A3B8]">Educational</span>
+            <span className="text-sm text-[#94A3B8]">{educational[0]}%</span>
           </div>
           <Slider
             value={educational}
@@ -35,8 +35,8 @@ export function ContentMixConfig() {
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Inspirational</span>
-            <span className="text-sm text-gray-400">{inspirational[0]}%</span>
+            <span className="text-sm text-[#94A3B8]">Inspirational</span>
+            <span className="text-sm text-[#94A3B8]">{inspirational[0]}%</span>
           </div>
           <Slider
             value={inspirational}
@@ -49,8 +49,8 @@ export function ContentMixConfig() {
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Entertaining</span>
-            <span className="text-sm text-gray-400">{entertaining[0]}%</span>
+            <span className="text-sm text-[#94A3B8]">Entertaining</span>
+            <span className="text-sm text-[#94A3B8]">{entertaining[0]}%</span>
           </div>
           <Slider
             value={entertaining}
@@ -63,8 +63,8 @@ export function ContentMixConfig() {
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Promotional</span>
-            <span className="text-sm text-gray-400">{promotional[0]}%</span>
+            <span className="text-sm text-[#94A3B8]">Promotional</span>
+            <span className="text-sm text-[#94A3B8]">{promotional[0]}%</span>
           </div>
           <Slider
             value={promotional}
@@ -75,15 +75,15 @@ export function ContentMixConfig() {
           />
         </div>
 
-        <div className="pt-4 border-t border-[#1E3A5F]">
-          <span className="text-sm text-gray-300 mb-2 block">Posts Per Day</span>
+        <div className="pt-4 border-t border-[#1E293B]">
+          <span className="text-sm text-[#94A3B8] mb-2 block">Posts Per Day</span>
           <Input
             type="number"
             min={1}
             max={10}
             value={postsPerDay}
             onChange={(e) => setPostsPerDay(e.target.value)}
-            className="w-24 bg-white/5 border-[#1E3A5F] text-white"
+            className="w-24 bg-white/5 border-[#1E293B] text-[#F8FAFC]"
           />
         </div>
       </div>

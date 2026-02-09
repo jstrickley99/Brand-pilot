@@ -8,7 +8,7 @@ export default function CalendarPage() {
   return (
     <div>
       <PageHeader title="Calendar" description="Visual content schedule across all accounts">
-        <span className="text-sm border border-[#1E3A5F] rounded-full px-3 py-1.5 text-gray-300">
+        <span className="text-sm border border-[#1E293B] rounded-full px-3 py-1.5 text-[#94A3B8]">
           {queuedCount} posts scheduled
         </span>
       </PageHeader>

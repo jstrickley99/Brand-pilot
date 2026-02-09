@@ -10,7 +10,7 @@ export function ContentQueue({ posts }: ContentQueueProps) {
 
   if (queued.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-[#94A3B8]">
         <p>No posts in queue. Content will be auto-generated soon.</p>
       </div>
     );

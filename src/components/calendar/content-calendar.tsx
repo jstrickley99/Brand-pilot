@@ -32,15 +32,15 @@ export function ContentCalendar({ posts }: ContentCalendarProps) {
     mockAccounts.find((a) => a.id === accountId);
 
   return (
-    <div className="rounded-xl bg-[#16213E] border border-[#1E3A5F] overflow-auto">
+    <div className="rounded-xl bg-[#111827] border border-[#1E293B] overflow-auto">
       <div className="min-w-[800px]">
         {/* Header */}
-        <div className="grid grid-cols-8 border-b border-[#1E3A5F]">
-          <div className="p-3 text-xs text-gray-400">Time</div>
+        <div className="grid grid-cols-8 border-b border-[#1E293B]">
+          <div className="p-3 text-xs text-[#94A3B8]">Time</div>
           {days.map((day, i) => (
-            <div key={day} className="p-3 text-center border-l border-[#1E3A5F]">
-              <p className="text-xs text-gray-400">{day}</p>
-              <p className="text-sm font-medium text-white">{dates[i]}</p>
+            <div key={day} className="p-3 text-center border-l border-[#1E293B]">
+              <p className="text-xs text-[#94A3B8]">{day}</p>
+              <p className="text-sm font-medium text-[#F8FAFC]">{dates[i]}</p>
             </div>
           ))}
         </div>
@@ -49,15 +49,15 @@ export function ContentCalendar({ posts }: ContentCalendarProps) {
         {hours.map((hour) => (
           <div
             key={hour}
-            className="grid grid-cols-8 border-b border-[#1E3A5F] last:border-0"
+            className="grid grid-cols-8 border-b border-[#1E293B] last:border-0"
           >
-            <div className="p-3 text-xs text-gray-400">{hour}</div>
+            <div className="p-3 text-xs text-[#94A3B8]">{hour}</div>
             {days.map((_, dayIndex) => {
               const slotPosts = getPostsForSlot(dayIndex, hour);
               return (
                 <div
                   key={dayIndex}
-                  className="p-1 border-l border-[#1E3A5F] min-h-[48px]"
+                  className="p-1 border-l border-[#1E293B] min-h-[48px]"
                 >
                   {slotPosts.map((post) => {
                     const account = getAccount(post.accountId);
@@ -66,7 +66,7 @@ export function ContentCalendar({ posts }: ContentCalendarProps) {
                         key={post.id}
                         className="p-1.5 rounded bg-[#3B82F6]/10 border border-[#3B82F6]/20 text-xs mb-1 cursor-pointer hover:bg-[#3B82F6]/20 transition-colors"
                       >
-                        <div className="flex items-center gap-1 text-white">
+                        <div className="flex items-center gap-1 text-[#F8FAFC]">
                           <span>
                             {account ? getNicheEmoji(account.niche) : ""}
                           </span>

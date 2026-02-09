@@ -10,7 +10,7 @@ export function ContentHistory({ posts }: ContentHistoryProps) {
 
   if (published.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-400">
+      <div className="text-center py-12 text-[#94A3B8]">
         <p>No published posts yet.</p>
       </div>
     );

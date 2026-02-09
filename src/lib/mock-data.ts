@@ -5,6 +5,9 @@ import {
   DashboardStats,
   ActivityItem,
   AnalyticsData,
+  PlatformConnection,
+  ConnectionLimit,
+  Pipeline,
 } from "./types";
 
 export const mockAccounts: InstagramAccount[] = [
@@ -338,3 +341,217 @@ export const mockAnalytics: AnalyticsData = {
   ],
   topPosts: [],
 };
+
+export const mockPlatformConnections: PlatformConnection[] = [
+  {
+    id: "yt",
+    platform: "youtube",
+    connected: false,
+    description: "Connect your YouTube channel to manage and schedule video content.",
+  },
+  {
+    id: "ig",
+    platform: "instagram",
+    connected: false,
+    description: "Manage your Instagram posts, stories, and reels.",
+    infoNotice: "Requires a Facebook Page connected to your Instagram Professional account.",
+  },
+  {
+    id: "fb",
+    platform: "facebook",
+    connected: false,
+    description: "Connect your Facebook Page to publish and schedule posts.",
+  },
+  {
+    id: "tt",
+    platform: "tiktok",
+    connected: false,
+    description: "Schedule and publish TikTok videos directly.",
+    requiresPro: true,
+  },
+  {
+    id: "tw",
+    platform: "twitter",
+    connected: false,
+    description: "Post and schedule tweets on X (formerly Twitter).",
+    requiresPro: true,
+  },
+];
+
+export const mockConnectionLimit: ConnectionLimit = {
+  current: 0,
+  max: 1,
+};
+
+export const mockPipelines: Pipeline[] = [
+  {
+    id: "pipeline-1",
+    name: "Fitness Content Pipeline",
+    status: "active",
+    nodes: [
+      {
+        id: "node-1",
+        type: "content_researcher",
+        name: "Fitness Trend Scout",
+        position: { x: 300, y: 200 },
+        config: {
+          topics: ["workout routines", "nutrition tips", "gym motivation"],
+          competitorAccounts: ["@gymshark", "@nike"],
+          trendSources: { tiktokTrending: true, instagramExplore: true, industryNews: false },
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+      {
+        id: "node-2",
+        type: "content_writer",
+        name: "Fitness Caption Writer",
+        position: { x: 550, y: 200 },
+        config: {
+          personaName: "Coach Mike",
+          personalityDescription: "Motivational and direct fitness coach",
+          writingTone: "motivational",
+          languagePreferences: "English",
+          emojiUsage: "moderate" as const,
+          examplePosts: ["Your body can stand almost anything. It's your mind you have to convince."],
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+      {
+        id: "node-3",
+        type: "hashtag_generator",
+        name: "Fitness Hashtags",
+        position: { x: 800, y: 200 },
+        config: {
+          strategy: "mixed" as const,
+          bannedHashtags: ["#followforfollow", "#like4like"],
+          hashtagCountMin: 8,
+          hashtagCountMax: 15,
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+      {
+        id: "node-4",
+        type: "scheduler",
+        name: "Peak Hours Scheduler",
+        position: { x: 1050, y: 200 },
+        config: {
+          activeDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+          postingWindowStart: "07:00",
+          postingWindowEnd: "20:00",
+          timezone: "America/New_York",
+          postsPerDay: 3,
+        },
+        status: "configured",
+        autonomyLevel: "semi_auto",
+        isActive: true,
+      },
+      {
+        id: "node-5",
+        type: "publisher",
+        name: "Instagram Publisher",
+        position: { x: 1300, y: 200 },
+        config: {
+          accountIds: ["acc-1"],
+          crossPostingEnabled: false,
+        },
+        status: "configured",
+        autonomyLevel: "approval_required",
+        isActive: true,
+      },
+    ],
+    connections: [
+      { id: "conn-1", sourceNodeId: "node-1", targetNodeId: "node-2" },
+      { id: "conn-2", sourceNodeId: "node-2", targetNodeId: "node-3" },
+      { id: "conn-3", sourceNodeId: "node-3", targetNodeId: "node-4" },
+      { id: "conn-4", sourceNodeId: "node-4", targetNodeId: "node-5" },
+    ],
+    assignedAccountIds: ["acc-1"],
+    createdAt: "2026-01-15T10:00:00Z",
+    updatedAt: "2026-02-09T08:30:00Z",
+  },
+  {
+    id: "pipeline-2",
+    name: "Meme Machine",
+    status: "active",
+    nodes: [
+      {
+        id: "node-6",
+        type: "content_researcher",
+        name: "Meme Trend Hunter",
+        position: { x: 300, y: 200 },
+        config: {
+          topics: ["viral memes", "relatable humor", "tech memes"],
+          competitorAccounts: ["@memezar", "@sarcasm_only"],
+          trendSources: { tiktokTrending: true, instagramExplore: true, industryNews: false },
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+      {
+        id: "node-7",
+        type: "content_writer",
+        name: "Meme Caption Master",
+        position: { x: 550, y: 200 },
+        config: {
+          personaName: "Meme Lord",
+          personalityDescription: "Extremely casual, gen-z humor, internet slang",
+          writingTone: "humorous",
+          languagePreferences: "English",
+          emojiUsage: "heavy" as const,
+          examplePosts: ["When the code works on the first try"],
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+      {
+        id: "node-8",
+        type: "publisher",
+        name: "Meme Publisher",
+        position: { x: 800, y: 200 },
+        config: {
+          accountIds: ["acc-3"],
+          crossPostingEnabled: false,
+        },
+        status: "configured",
+        autonomyLevel: "full_auto",
+        isActive: true,
+      },
+    ],
+    connections: [
+      { id: "conn-5", sourceNodeId: "node-6", targetNodeId: "node-7" },
+      { id: "conn-6", sourceNodeId: "node-7", targetNodeId: "node-8" },
+    ],
+    assignedAccountIds: ["acc-3"],
+    createdAt: "2026-01-20T14:00:00Z",
+    updatedAt: "2026-02-08T16:00:00Z",
+  },
+  {
+    id: "pipeline-3",
+    name: "Luxury Brand Pipeline",
+    status: "draft",
+    nodes: [
+      {
+        id: "node-9",
+        type: "content_writer",
+        name: "Luxury Copywriter",
+        position: { x: 300, y: 200 },
+        config: null,
+        status: "unconfigured",
+        autonomyLevel: "approval_required",
+        isActive: false,
+      },
+    ],
+    connections: [],
+    assignedAccountIds: [],
+    createdAt: "2026-02-08T09:00:00Z",
+    updatedAt: "2026-02-08T09:00:00Z",
+  },
+];

@@ -1,12 +1,18 @@
+"use client";
+
+import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import { AccountMiniCards } from "@/components/dashboard/account-mini-cards";
 import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { Button } from "@/components/ui/button";
+import { GenerateContentModal } from "@/components/content/generate-content-modal";
 import { Plus, Sparkles } from "lucide-react";
 import { mockDashboardStats, mockAccounts, mockActivity } from "@/lib/mock-data";
 
 export default function DashboardPage() {
+  const [modalOpen, setModalOpen] = useState(false);
+
   return (
     <div>
       <PageHeader
@@ -15,12 +21,12 @@ export default function DashboardPage() {
       >
         <Button
           variant="outline"
-          className="border-[#1E3A5F] bg-transparent text-white hover:bg-white/5"
+          className="border-[#1E293B] bg-transparent text-[#F8FAFC] hover:bg-white/5"
         >
           <Plus className="h-4 w-4 mr-2" />
           Add Account
         </Button>
-        <Button className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white">
+        <Button onClick={() => setModalOpen(true)} className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white">
           <Sparkles className="h-4 w-4 mr-2" />
           Generate Content
         </Button>
@@ -30,7 +36,7 @@ export default function DashboardPage() {
         <StatsCards stats={mockDashboardStats} />
 
         <div>
-          <h2 className="text-lg font-semibold mb-4 text-white">
+          <h2 className="text-lg font-semibold mb-4 text-[#F8FAFC]">
             Account Performance
           </h2>
           <AccountMiniCards accounts={mockAccounts} />
@@ -40,6 +46,8 @@ export default function DashboardPage() {
           <ActivityFeed activities={mockActivity} />
         </div>
       </div>
+
+      <GenerateContentModal open={modalOpen} onOpenChange={setModalOpen} />
     </div>
   );
 }

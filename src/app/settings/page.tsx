@@ -11,7 +11,7 @@ export default function SettingsPage() {
   return (
     <div>
       <PageHeader title="Settings" description="Configure niche, brand voice, and content strategy">
-        <Button className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white">
+        <Button className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-[#F8FAFC]">
           <Save className="h-4 w-4 mr-2" />
           Save Changes
         </Button>

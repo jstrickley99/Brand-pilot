@@ -16,8 +16,8 @@ interface FollowerChartProps {
 
 export function FollowerChart({ data }: FollowerChartProps) {
   return (
-    <div className="rounded-xl bg-[#16213E] border border-[#1E3A5F] p-6">
-      <h3 className="font-semibold mb-4 text-white">Follower Growth</h3>
+    <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
+      <h3 className="font-semibold mb-4 text-[#F8FAFC]">Follower Growth</h3>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
@@ -27,7 +27,7 @@ export function FollowerChart({ data }: FollowerChartProps) {
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1E3A5F" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
             <XAxis dataKey="date" stroke="#94A3B8" fontSize={12} />
             <YAxis
               stroke="#94A3B8"
@@ -36,8 +36,8 @@ export function FollowerChart({ data }: FollowerChartProps) {
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#16213E",
-                border: "1px solid #1E3A5F",
+                backgroundColor: "#111827",
+                border: "1px solid #1E293B",
                 borderRadius: "8px",
                 color: "#F8FAFC",
               }}

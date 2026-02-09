@@ -12,7 +12,7 @@ export function AccountMiniCards({ accounts }: AccountMiniCardsProps) {
       {accounts.map((account) => (
         <div
           key={account.id}
-          className="p-4 rounded-xl bg-[#16213E] border border-[#1E3A5F] hover:border-[#3B82F6]/30 transition-colors cursor-pointer"
+          className="p-4 rounded-xl bg-[#111827] border border-[#1E293B] hover:border-[#3B82F6]/30 transition-colors cursor-pointer"
         >
           <div className="flex items-start justify-between mb-3">
             <div className="flex items-center gap-3">
@@ -20,8 +20,8 @@ export function AccountMiniCards({ accounts }: AccountMiniCardsProps) {
                 {getNicheEmoji(account.niche)}
               </div>
               <div>
-                <p className="font-medium text-sm text-white">{account.handle}</p>
-                <p className="text-xs text-gray-400">{account.displayName}</p>
+                <p className="font-medium text-sm text-[#F8FAFC]">{account.handle}</p>
+                <p className="text-xs text-[#94A3B8]">{account.displayName}</p>
               </div>
             </div>
             <span
@@ -32,8 +32,8 @@ export function AccountMiniCards({ accounts }: AccountMiniCardsProps) {
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             <div>
-              <p className="text-lg font-bold text-white">{formatNumber(account.followers)}</p>
-              <p className="text-xs text-gray-400">Followers</p>
+              <p className="text-lg font-bold text-[#F8FAFC]">{formatNumber(account.followers)}</p>
+              <p className="text-xs text-[#94A3B8]">Followers</p>
             </div>
             <div>
               <div className="flex items-center justify-center gap-1">
@@ -49,14 +49,14 @@ export function AccountMiniCards({ accounts }: AccountMiniCardsProps) {
                   {account.followersGrowth}%
                 </p>
               </div>
-              <p className="text-xs text-gray-400">Growth</p>
+              <p className="text-xs text-[#94A3B8]">Growth</p>
             </div>
             <div>
-              <p className="text-lg font-bold text-white">{account.engagementRate}%</p>
-              <p className="text-xs text-gray-400">Engagement</p>
+              <p className="text-lg font-bold text-[#F8FAFC]">{account.engagementRate}%</p>
+              <p className="text-xs text-[#94A3B8]">Engagement</p>
             </div>
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-[#94A3B8] mt-3">
             Last post: {formatDate(account.lastPostAt)}
           </p>
         </div>

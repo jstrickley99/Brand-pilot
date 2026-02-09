@@ -99,3 +99,245 @@ export interface AnalyticsData {
   contentPerformance: { type: ContentType; avgLikes: number; avgComments: number; avgReach: number }[];
   topPosts: ContentPost[];
 }
+
+// Agent & Pipeline types
+
+export type AgentType =
+  | "content_researcher"
+  | "content_writer"
+  | "hashtag_generator"
+  | "media_creator"
+  | "scheduler"
+  | "publisher"
+  | "engagement_bot"
+  | "analytics_monitor";
+
+export type AgentNodeStatus = "unconfigured" | "configured" | "error";
+
+export type PipelineStatus = "draft" | "active" | "paused";
+
+export interface ContentResearcherConfig {
+  topics: string[];
+  competitorAccounts: string[];
+  trendSources: {
+    tiktokTrending: boolean;
+    instagramExplore: boolean;
+    industryNews: boolean;
+  };
+}
+
+export interface ContentWriterConfig {
+  personaName: string;
+  personalityDescription: string;
+  writingTone: string;
+  languagePreferences: string;
+  emojiUsage: "none" | "minimal" | "moderate" | "heavy";
+  examplePosts: string[];
+}
+
+export interface HashtagGeneratorConfig {
+  strategy: "max_reach" | "niche_specific" | "mixed";
+  bannedHashtags: string[];
+  hashtagCountMin: number;
+  hashtagCountMax: number;
+}
+
+export interface MediaCreatorConfig {
+  visualStyle: string;
+  brandColors: string[];
+  contentFormats: ("reels" | "carousels" | "stories")[];
+}
+
+export interface SchedulerConfig {
+  activeDays: string[];
+  postingWindowStart: string;
+  postingWindowEnd: string;
+  timezone: string;
+  postsPerDay: number;
+}
+
+export interface PublisherConfig {
+  accountIds: string[];
+  crossPostingEnabled: boolean;
+}
+
+export interface EngagementBotConfig {
+  replyTone: string;
+  autoReplyTriggers: ("keywords" | "all_comments" | "questions_only")[];
+  triggerKeywords: string[];
+  dmAutoResponse: boolean;
+  dmTemplates: string[];
+}
+
+export interface AnalyticsMonitorConfig {
+  metricsToTrack: ("followers" | "engagement_rate" | "reach" | "saves")[];
+  reportingFrequency: "daily" | "weekly";
+  performanceThresholds: {
+    minEngagementRate: number;
+    minReach: number;
+  };
+}
+
+export type AgentNodeConfig =
+  | ContentResearcherConfig
+  | ContentWriterConfig
+  | HashtagGeneratorConfig
+  | MediaCreatorConfig
+  | SchedulerConfig
+  | PublisherConfig
+  | EngagementBotConfig
+  | AnalyticsMonitorConfig;
+
+export interface AgentNode {
+  id: string;
+  type: AgentType;
+  name: string;
+  position: { x: number; y: number };
+  config: AgentNodeConfig | null;
+  status: AgentNodeStatus;
+  autonomyLevel: AutonomyLevel;
+  isActive: boolean;
+}
+
+export interface PipelineConnection {
+  id: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+}
+
+export interface Pipeline {
+  id: string;
+  name: string;
+  status: PipelineStatus;
+  nodes: AgentNode[];
+  connections: PipelineConnection[];
+  assignedAccountIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentTypeMeta {
+  type: AgentType;
+  label: string;
+  description: string;
+  iconName: string;
+  accentColor: string;
+}
+
+export const AGENT_TYPE_META: AgentTypeMeta[] = [
+  {
+    type: "content_researcher",
+    label: "Content Researcher",
+    description: "Finds trending topics, competitor analysis, niche research",
+    iconName: "Search",
+    accentColor: "#8B5CF6",
+  },
+  {
+    type: "content_writer",
+    label: "Content Writer",
+    description: "Generates captions, scripts, copy with your brand voice",
+    iconName: "PenTool",
+    accentColor: "#3B82F6",
+  },
+  {
+    type: "hashtag_generator",
+    label: "Hashtag Generator",
+    description: "Researches and selects optimal hashtags",
+    iconName: "Hash",
+    accentColor: "#10B981",
+  },
+  {
+    type: "media_creator",
+    label: "Image/Video Creator",
+    description: "Generates or selects visual content",
+    iconName: "Image",
+    accentColor: "#F97316",
+  },
+  {
+    type: "scheduler",
+    label: "Scheduler",
+    description: "Determines optimal posting times and queues content",
+    iconName: "Clock",
+    accentColor: "#EAB308",
+  },
+  {
+    type: "publisher",
+    label: "Publisher",
+    description: "Posts content to connected accounts",
+    iconName: "Send",
+    accentColor: "#EC4899",
+  },
+  {
+    type: "engagement_bot",
+    label: "Engagement Bot",
+    description: "Auto-replies to comments, DMs, follows/unfollows",
+    iconName: "MessageCircle",
+    accentColor: "#14B8A6",
+  },
+  {
+    type: "analytics_monitor",
+    label: "Analytics Monitor",
+    description: "Tracks performance and feeds insights back",
+    iconName: "BarChart3",
+    accentColor: "#6366F1",
+  },
+];
+
+export type Platform = "youtube" | "instagram" | "facebook" | "tiktok" | "twitter";
+
+export interface PlatformConnection {
+  id: string;
+  platform: Platform;
+  connected: boolean;
+  description: string;
+  infoNotice?: string;
+  requiresPro?: boolean;
+}
+
+export interface ConnectionLimit {
+  current: number;
+  max: number;
+}
+
+export type AIProvider = "anthropic" | "openai";
+
+export interface GenerateContentRequest {
+  provider: AIProvider;
+  accountId: string;
+  contentType: ContentType;
+  prompt: string;
+  niche: Niche;
+  brandVoice: BrandVoice;
+}
+
+export interface GeneratedContent {
+  caption: string;
+  hashtags: string[];
+  suggestedPostingTime: string;
+  provider: AIProvider;
+}
+
+export interface GenerateContentResponse {
+  success: boolean;
+  content?: GeneratedContent;
+  error?: string;
+}
+
+export type OnboardingStep = "welcome" | "niche" | "connect" | "configure";
+
+export interface OnboardingData {
+  niche: Niche | null;
+  connectedPlatforms: string[];
+  brandVoice: { toneFormality: number; toneHumor: number; toneInspiration: number };
+  contentMix: ContentMix;
+  postsPerDay: number;
+}
+
+export interface NangoConnectionMeta {
+  connectionId: string;
+  providerConfigKey: string;
+  connected: boolean;
+  username?: string;
+  profilePicUrl?: string;
+  connectedAt?: string;
+}

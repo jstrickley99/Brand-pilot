@@ -9,17 +9,17 @@ export function BrandVoiceConfig() {
   const [inspiration, setInspiration] = useState([80]);
 
   return (
-    <div className="rounded-xl bg-[#16213E] border border-[#1E3A5F] p-6">
-      <h3 className="font-semibold mb-2 text-white">Brand Voice</h3>
-      <p className="text-sm text-gray-400 mb-6">
+    <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
+      <h3 className="font-semibold mb-2 text-[#F8FAFC]">Brand Voice</h3>
+      <p className="text-sm text-[#94A3B8] mb-6">
         Configure the tone and personality of your content
       </p>
 
       <div className="space-y-6">
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Casual</span>
-            <span className="text-sm text-gray-300">Formal</span>
+            <span className="text-sm text-[#94A3B8]">Casual</span>
+            <span className="text-sm text-[#94A3B8]">Formal</span>
           </div>
           <Slider
             value={formality}
@@ -28,13 +28,13 @@ export function BrandVoiceConfig() {
             step={1}
             className="w-full"
           />
-          <p className="text-xs text-gray-400 text-center mt-1">{formality[0]}%</p>
+          <p className="text-xs text-[#94A3B8] text-center mt-1">{formality[0]}%</p>
         </div>
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Serious</span>
-            <span className="text-sm text-gray-300">Humorous</span>
+            <span className="text-sm text-[#94A3B8]">Serious</span>
+            <span className="text-sm text-[#94A3B8]">Humorous</span>
           </div>
           <Slider
             value={humor}
@@ -43,13 +43,13 @@ export function BrandVoiceConfig() {
             step={1}
             className="w-full"
           />
-          <p className="text-xs text-gray-400 text-center mt-1">{humor[0]}%</p>
+          <p className="text-xs text-[#94A3B8] text-center mt-1">{humor[0]}%</p>
         </div>
 
         <div>
           <div className="flex justify-between mb-2">
-            <span className="text-sm text-gray-300">Practical</span>
-            <span className="text-sm text-gray-300">Inspirational</span>
+            <span className="text-sm text-[#94A3B8]">Practical</span>
+            <span className="text-sm text-[#94A3B8]">Inspirational</span>
           </div>
           <Slider
             value={inspiration}
@@ -58,7 +58,7 @@ export function BrandVoiceConfig() {
             step={1}
             className="w-full"
           />
-          <p className="text-xs text-gray-400 text-center mt-1">{inspiration[0]}%</p>
+          <p className="text-xs text-[#94A3B8] text-center mt-1">{inspiration[0]}%</p>
         </div>
       </div>
     </div>
