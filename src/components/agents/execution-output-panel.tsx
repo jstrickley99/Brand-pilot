@@ -5,12 +5,9 @@ import {
   X,
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
   CheckCircle2,
   XCircle,
   Loader2,
@@ -21,7 +18,7 @@ import type { AgentNode, NodeRun, NodeRunStatus } from "@/lib/types";
 import { AGENT_TYPE_META } from "@/lib/types";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  Search, PenTool, Hash, Image, Clock, Send, MessageCircle, BarChart3,
+  Search, PenTool, Image, Clock, Send,
 };
 
 interface ExecutionOutputPanelProps {

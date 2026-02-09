@@ -1,4 +1,4 @@
-import type { AgentType, AgentNodeConfig, ContentResearcherConfig, ContentWriterConfig, HashtagGeneratorConfig, MediaCreatorConfig, SchedulerConfig, PublisherConfig, EngagementBotConfig, AnalyticsMonitorConfig } from "./types";
+import type { AgentType, AgentNodeConfig, ContentResearcherConfig, ContentWriterConfig, MediaCreatorConfig, SchedulerConfig, PublisherConfig } from "./types";
 
 // ---------------------------------------------------------------------------
 // Agent-specific prompt builders
@@ -94,27 +94,6 @@ Create a caption that matches the brand voice. Include a strong opening hook and
       };
     }
 
-    case "hashtag_generator": {
-      const cfg = config as HashtagGeneratorConfig | null;
-      return {
-        system: `You are a social media hashtag strategist for the ${nicheStr} niche. You select hashtags that maximize reach and engagement.
-
-Respond ONLY with valid JSON in this format:
-{
-  "hashtags": ["hashtag1", "hashtag2"],
-  "strategy": "Brief explanation of hashtag selection strategy",
-  "estimatedReach": "Rough reach estimate"
-}`,
-        user: `Generate optimal hashtags for ${handleStr} in the ${nicheStr} niche.
-
-Strategy: ${cfg?.strategy ?? "mixed"}
-Count: ${cfg?.hashtagCountMin ?? 5} to ${cfg?.hashtagCountMax ?? 20} hashtags
-${cfg?.bannedHashtags?.length ? `Banned hashtags (DO NOT use): ${cfg.bannedHashtags.join(", ")}` : ""}${prevContext}
-
-Select a mix of broad reach and niche-specific hashtags. Do NOT include the # symbol in the hashtag strings.`,
-      };
-    }
-
     case "media_creator": {
       const cfg = config as MediaCreatorConfig | null;
       return {
@@ -180,52 +159,6 @@ Target accounts: ${cfg?.accountIds?.join(", ") ?? handleStr}
 Cross-posting: ${cfg?.crossPostingEnabled ? "enabled" : "disabled"}${prevContext}
 
 Review the content from previous agents and confirm it's ready to publish. Provide a final summary.`,
-      };
-    }
-
-    case "engagement_bot": {
-      const cfg = config as EngagementBotConfig | null;
-      return {
-        system: `You are a social media engagement specialist. You craft authentic replies, responses, and engagement strategies.
-
-Respond ONLY with valid JSON in this format:
-{
-  "replyTemplates": ["reply1", "reply2", "reply3"],
-  "engagementStrategy": "Overall engagement approach",
-  "dmTemplate": "Auto DM template text or null",
-  "triggerKeywords": ["keyword1", "keyword2"]
-}`,
-        user: `Create an engagement strategy for ${handleStr} in the ${nicheStr} niche.
-
-Reply tone: ${cfg?.replyTone ?? toneStr}
-Auto-reply triggers: ${cfg?.autoReplyTriggers?.join(", ") ?? "all comments"}
-${cfg?.triggerKeywords?.length ? `Trigger keywords: ${cfg.triggerKeywords.join(", ")}` : ""}
-DM auto-response: ${cfg?.dmAutoResponse ? "enabled" : "disabled"}${prevContext}
-
-Create reply templates and an engagement strategy that feels authentic.`,
-      };
-    }
-
-    case "analytics_monitor": {
-      const cfg = config as AnalyticsMonitorConfig | null;
-      return {
-        system: `You are a social media analytics expert. You analyze performance data and provide actionable insights.
-
-Respond ONLY with valid JSON in this format:
-{
-  "performanceSummary": "Overall performance assessment",
-  "keyMetrics": {"metric1": "value1", "metric2": "value2"},
-  "insights": ["insight1", "insight2"],
-  "recommendations": ["recommendation1", "recommendation2"]
-}`,
-        user: `Analyze content performance for ${handleStr} in the ${nicheStr} niche.
-
-Metrics to focus on: ${cfg?.metricsToTrack?.join(", ") ?? "followers, engagement_rate, reach"}
-Reporting frequency: ${cfg?.reportingFrequency ?? "daily"}
-Min engagement rate threshold: ${cfg?.performanceThresholds?.minEngagementRate ?? 3}%
-Min reach threshold: ${cfg?.performanceThresholds?.minReach ?? 500}${prevContext}
-
-Provide a performance analysis with insights and actionable recommendations.`,
       };
     }
 

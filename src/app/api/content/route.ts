@@ -41,13 +41,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { id, status } = body;
+  const { id, status, scheduledAt, targetPlatform } = body;
 
   if (!id || !status) {
     return NextResponse.json({ success: false, error: "id and status required" }, { status: 400 });
   }
 
-  const ok = await updateContentStatus(userId, id, status);
+  const ok = await updateContentStatus(userId, id, status, { scheduledAt, targetPlatform });
   if (!ok) {
     return NextResponse.json({ success: false, error: "Failed to update content" }, { status: 500 });
   }

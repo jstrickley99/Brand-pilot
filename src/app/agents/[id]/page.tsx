@@ -7,18 +7,8 @@ import {
   Save,
   Rocket,
   Bot,
-  Search,
-  PenTool,
-  Hash,
-  Image,
-  Clock,
-  Send,
-  MessageCircle,
-  BarChart3,
   Pause,
   Play,
-  Copy,
-  Trash2,
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,15 +16,12 @@ import type { Pipeline, AgentNode, AgentType, AIProvider, PipelineConnection, Ex
 import { AGENT_TYPE_META } from "@/lib/types";
 import { PipelineCanvas } from "@/components/agents/pipeline-canvas";
 import { ConfigPanel } from "@/components/agents/config-panel";
+import { AgentPicker } from "@/components/agents/agent-picker";
 import { AssignAccounts } from "@/components/agents/assign-accounts";
 import { ExecutionBar } from "@/components/agents/execution-bar";
 import { ExecutionOutputPanel } from "@/components/agents/execution-output-panel";
 import { useExecutionRunner } from "@/lib/use-execution-runner";
 import { hasApiKey } from "@/lib/api-keys";
-
-const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  Search, PenTool, Hash, Image, Clock, Send, MessageCircle, BarChart3,
-};
 
 interface PipelinePageProps {
   params: Promise<{ id: string }>;
@@ -510,61 +497,13 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
         />
       </div>
 
-      {/* Agent picker overlay — only in build mode */}
-      {!isExecutionMode && isAgentPickerOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-          onClick={() => setIsAgentPickerOpen(false)}
-        >
-          <div
-            className="bg-[#111827] border border-[#1E293B] rounded-2xl p-6 w-full max-w-md shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-            style={{ animation: "agent-picker-panel-in 200ms ease-out" }}
-          >
-            <style>{`
-              @keyframes agent-picker-panel-in {
-                from { opacity: 0; transform: scale(0.95); }
-                to { opacity: 1; transform: scale(1); }
-              }
-            `}</style>
-            <h3 className="text-lg font-semibold text-[#F8FAFC] mb-2">Add Agent Node</h3>
-            <p className="text-sm text-[#94A3B8] mb-4">Select an agent type to add to your pipeline.</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              {AGENT_TYPE_META.map((meta) => {
-                const Icon = iconMap[meta.iconName];
-                return (
-                  <button
-                    key={meta.type}
-                    onClick={() => handleAgentTypeSelect(meta.type)}
-                    className="p-4 rounded-xl border border-[#1E293B] bg-[#0B0F19] cursor-pointer transition-all duration-150 text-left group"
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = `${meta.accentColor}80`;
-                      e.currentTarget.style.boxShadow = `0 10px 15px -3px ${meta.accentColor}0d`;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = "";
-                      e.currentTarget.style.boxShadow = "";
-                    }}
-                  >
-                    {Icon && <Icon className="h-6 w-6 mb-2" style={{ color: meta.accentColor }} />}
-                    <p className="text-sm font-medium text-[#F8FAFC]">{meta.label}</p>
-                    <p className="text-xs text-[#64748B] mt-1 leading-relaxed">{meta.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="pt-3 border-t border-[#1E293B] mt-4">
-              <button
-                onClick={() => setIsAgentPickerOpen(false)}
-                className="w-full text-center text-sm text-[#94A3B8] hover:text-[#F8FAFC] py-2 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Agent picker wizard — only in build mode */}
+      {!isExecutionMode && (
+        <AgentPicker
+          open={isAgentPickerOpen}
+          onClose={() => setIsAgentPickerOpen(false)}
+          onSelect={handleAgentTypeSelect}
+        />
       )}
 
       {/* Side panel: Config (build mode) or Execution Output (execute mode) */}

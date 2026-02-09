@@ -7,12 +7,9 @@ import {
   ChevronDown,
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -23,23 +20,17 @@ import {
   type AutonomyLevel,
   type ContentResearcherConfig as ContentResearcherConfigType,
   type ContentWriterConfig as ContentWriterConfigType,
-  type HashtagGeneratorConfig as HashtagGeneratorConfigType,
   type MediaCreatorConfig as MediaCreatorConfigType,
   type SchedulerConfig as SchedulerConfigType,
   type PublisherConfig as PublisherConfigType,
-  type EngagementBotConfig as EngagementBotConfigType,
-  type AnalyticsMonitorConfig as AnalyticsMonitorConfigType,
 } from "@/lib/types";
 
 import { AutonomyConfig } from "./config-sections/autonomy-config";
 import { ContentResearcherConfig } from "./config-sections/content-researcher-config";
 import { ContentWriterConfig } from "./config-sections/content-writer-config";
-import { HashtagConfig } from "./config-sections/hashtag-config";
 import { MediaCreatorConfig } from "./config-sections/media-creator-config";
 import { SchedulerConfig } from "./config-sections/scheduler-config";
 import { PublisherConfig } from "./config-sections/publisher-config";
-import { EngagementConfig } from "./config-sections/engagement-config";
-import { AnalyticsConfig } from "./config-sections/analytics-config";
 
 // ---------------------------------------------------------------------------
 // Icon mapping
@@ -48,12 +39,9 @@ import { AnalyticsConfig } from "./config-sections/analytics-config";
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
 };
 
 function getAgentIcon(iconName: string) {
@@ -191,13 +179,6 @@ export function ConfigPanel({
             onChange={handleConfigChange}
           />
         );
-      case "hashtag_generator":
-        return (
-          <HashtagConfig
-            config={node.config as HashtagGeneratorConfigType | null}
-            onChange={handleConfigChange}
-          />
-        );
       case "media_creator":
         return (
           <MediaCreatorConfig
@@ -216,20 +197,6 @@ export function ConfigPanel({
         return (
           <PublisherConfig
             config={node.config as PublisherConfigType | null}
-            onChange={handleConfigChange}
-          />
-        );
-      case "engagement_bot":
-        return (
-          <EngagementConfig
-            config={node.config as EngagementBotConfigType | null}
-            onChange={handleConfigChange}
-          />
-        );
-      case "analytics_monitor":
-        return (
-          <AnalyticsConfig
-            config={node.config as AnalyticsMonitorConfigType | null}
             onChange={handleConfigChange}
           />
         );

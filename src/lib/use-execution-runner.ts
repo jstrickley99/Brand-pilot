@@ -19,11 +19,6 @@ const STATUS_LINES: Record<AgentType, string[]> = {
     "Generating caption draft...",
     "Applying tone and style...",
   ],
-  hashtag_generator: [
-    "Analyzing content context...",
-    "Researching hashtag performance...",
-    "Selecting optimal mix...",
-  ],
   media_creator: [
     "Analyzing content for visual direction...",
     "Generating visual brief...",
@@ -39,14 +34,19 @@ const STATUS_LINES: Record<AgentType, string[]> = {
     "Validating content requirements...",
     "Running pre-publish checks...",
   ],
+  hashtag_generator: [
+    "Researching trending hashtags...",
+    "Analyzing hashtag performance...",
+    "Selecting optimal tags...",
+  ],
   engagement_bot: [
-    "Analyzing engagement patterns...",
-    "Crafting reply templates...",
-    "Configuring trigger rules...",
+    "Scanning recent interactions...",
+    "Preparing auto-replies...",
+    "Processing engagement queue...",
   ],
   analytics_monitor: [
     "Collecting performance metrics...",
-    "Analyzing engagement data...",
+    "Analyzing engagement patterns...",
     "Generating insights report...",
   ],
 };
@@ -103,11 +103,6 @@ function formatNodeResult(type: AgentType, jsonOutput: string): string {
       case "content_writer":
         return parsed.caption || jsonOutput;
 
-      case "hashtag_generator":
-        return parsed.hashtags?.length
-          ? parsed.hashtags.map((h: string) => `#${h}`).join(" ")
-          : jsonOutput;
-
       case "media_creator":
         return [
           parsed.imageDescription,
@@ -126,18 +121,6 @@ function formatNodeResult(type: AgentType, jsonOutput: string): string {
         return [
           parsed.publishSummary,
           parsed.contentChecklist?.length && `Checklist: ${parsed.contentChecklist.join(", ")}`,
-        ].filter(Boolean).join("\n");
-
-      case "engagement_bot":
-        return [
-          parsed.engagementStrategy,
-          parsed.replyTemplates?.length && `Templates: ${parsed.replyTemplates.length} created`,
-        ].filter(Boolean).join("\n");
-
-      case "analytics_monitor":
-        return [
-          parsed.performanceSummary,
-          parsed.insights?.length && `Insights: ${parsed.insights.join("; ")}`,
         ].filter(Boolean).join("\n");
 
       default:

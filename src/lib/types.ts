@@ -67,6 +67,7 @@ export interface ContentPost {
   impressions?: number;
   isRepost: boolean;
   originalCreator?: string;
+  targetPlatform?: Platform;
 }
 
 export interface CreditBalance {

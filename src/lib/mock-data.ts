@@ -421,25 +421,10 @@ export const mockPipelines: Pipeline[] = [
         isActive: true,
       },
       {
-        id: "node-3",
-        type: "hashtag_generator",
-        name: "Fitness Hashtags",
-        position: { x: 800, y: 200 },
-        config: {
-          strategy: "mixed" as const,
-          bannedHashtags: ["#followforfollow", "#like4like"],
-          hashtagCountMin: 8,
-          hashtagCountMax: 15,
-        },
-        status: "configured",
-        autonomyLevel: "full_auto",
-        isActive: true,
-      },
-      {
         id: "node-4",
         type: "scheduler",
         name: "Peak Hours Scheduler",
-        position: { x: 1050, y: 200 },
+        position: { x: 800, y: 200 },
         config: {
           activeDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
           postingWindowStart: "07:00",
@@ -455,7 +440,7 @@ export const mockPipelines: Pipeline[] = [
         id: "node-5",
         type: "publisher",
         name: "Instagram Publisher",
-        position: { x: 1300, y: 200 },
+        position: { x: 1050, y: 200 },
         config: {
           accountIds: ["acc-1"],
           crossPostingEnabled: false,
@@ -467,9 +452,8 @@ export const mockPipelines: Pipeline[] = [
     ],
     connections: [
       { id: "conn-1", sourceNodeId: "node-1", targetNodeId: "node-2" },
-      { id: "conn-2", sourceNodeId: "node-2", targetNodeId: "node-3" },
-      { id: "conn-3", sourceNodeId: "node-3", targetNodeId: "node-4" },
-      { id: "conn-4", sourceNodeId: "node-4", targetNodeId: "node-5" },
+      { id: "conn-2", sourceNodeId: "node-2", targetNodeId: "node-4" },
+      { id: "conn-3", sourceNodeId: "node-4", targetNodeId: "node-5" },
     ],
     assignedAccountIds: ["acc-1"],
     createdAt: "2026-01-15T10:00:00Z",

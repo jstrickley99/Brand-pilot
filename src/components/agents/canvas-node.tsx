@@ -4,12 +4,9 @@ import { useCallback, useRef } from "react";
 import {
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
   Check,
   X,
   Loader2,
@@ -21,12 +18,9 @@ import { AGENT_TYPE_META as agentTypeMeta } from "@/lib/types";
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
 };
 
 const statusColors: Record<AgentNodeStatus, string> = {

@@ -8,8 +8,7 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { Button } from "@/components/ui/button";
 import { GenerateContentModal } from "@/components/content/generate-content-modal";
 import { Plus, Sparkles } from "lucide-react";
-import type { InstagramAccount } from "@/lib/types";
-import { getAllContent } from "@/lib/content-store";
+import type { InstagramAccount, ContentPost } from "@/lib/types";
 import type { DashboardStats, ActivityItem } from "@/lib/types";
 
 const DEFAULT_STATS: DashboardStats = {
@@ -21,34 +20,41 @@ const DEFAULT_STATS: DashboardStats = {
   followersGainedThisWeek: 0,
 };
 
-function buildRealActivity(): ActivityItem[] {
-  const allContent = getAllContent();
-
-  const realActivities: ActivityItem[] = allContent.slice(0, 10).map((item) => {
+function buildActivityFromContent(content: ContentPost[]): ActivityItem[] {
+  return content.slice(0, 10).map((item) => {
     const typeMap: Record<string, ActivityItem["type"]> = {
-      generated: "content_generated",
+      draft: "content_generated",
       queued: "content_generated",
+      scheduled: "content_generated",
       published: "post_published",
       failed: "content_generated",
     };
 
     const messageMap: Record<string, string> = {
-      generated: "Content generated via AI",
+      draft: "Content drafted",
       queued: "Content moved to queue",
+      scheduled: "Content scheduled for publishing",
       published: "Post published successfully",
       failed: "Content generation failed",
     };
 
     return {
-      id: `real-${item.id}`,
+      id: `activity-${item.id}`,
       type: typeMap[item.status] || "content_generated",
       message: messageMap[item.status] || `Content ${item.status}`,
       accountHandle: item.accountHandle,
-      timestamp: item.createdAt,
+      timestamp: item.publishedAt || item.scheduledAt,
     };
   });
+}
 
-  return realActivities;
+function countPostsThisWeek(content: ContentPost[]): number {
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  return content.filter((item) => {
+    if (item.status !== "published" || !item.publishedAt) return false;
+    return new Date(item.publishedAt) >= weekAgo;
+  }).length;
 }
 
 export default function DashboardPage() {
@@ -57,14 +63,26 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
 
-  const refreshData = useCallback(() => {
-    setActivities(buildRealActivity());
+  const fetchContent = useCallback(() => {
+    fetch("/api/content")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.content) {
+          const items: ContentPost[] = data.content;
+          setActivities(buildActivityFromContent(items));
+          setStats((prev) => ({
+            ...prev,
+            postsThisWeek: countPostsThisWeek(items),
+          }));
+        }
+      })
+      .catch(() => {});
   }, []);
 
-  // Load real data on mount
+  // Load content data on mount
   useEffect(() => {
-    refreshData();
-  }, [refreshData]);
+    fetchContent();
+  }, [fetchContent]);
 
   // Fetch accounts from API
   useEffect(() => {
@@ -93,7 +111,7 @@ export default function DashboardPage() {
   const handleModalChange = (open: boolean) => {
     setModalOpen(open);
     if (!open) {
-      refreshData();
+      fetchContent();
     }
   };
 

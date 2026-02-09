@@ -267,6 +267,7 @@ export async function getContent(
     impressions: row.impressions,
     isRepost: row.is_repost,
     originalCreator: row.original_creator || undefined,
+    targetPlatform: row.target_platform || undefined,
   }));
 }
 
@@ -308,11 +309,18 @@ export async function createContent(
 export async function updateContentStatus(
   userId: string,
   contentId: string,
-  status: string
+  status: string,
+  extra?: { scheduledAt?: string | null; targetPlatform?: string | null }
 ): Promise<boolean> {
   const payload: Record<string, unknown> = { status };
   if (status === "published") {
     payload.published_at = new Date().toISOString();
+  }
+  if (extra?.scheduledAt !== undefined) {
+    payload.scheduled_at = extra.scheduledAt;
+  }
+  if (extra?.targetPlatform !== undefined) {
+    payload.target_platform = extra.targetPlatform;
   }
 
   const { error } = await supabase

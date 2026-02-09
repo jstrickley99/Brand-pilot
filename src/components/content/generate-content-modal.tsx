@@ -101,7 +101,7 @@ export function GenerateContentModal({ open, onOpenChange, onContentSaved }: Gen
         setResult(data.content);
         setState("result");
 
-        saveGeneratedContent({
+        await saveGeneratedContent({
           caption: data.content.caption,
           hashtags: data.content.hashtags,
           suggestedPostingTime: data.content.suggestedPostingTime,

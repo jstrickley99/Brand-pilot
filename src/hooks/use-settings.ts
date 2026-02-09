@@ -41,74 +41,112 @@ function loadSettings(): SettingsData {
   }
 }
 
+function toApiPayload(settings: SettingsData) {
+  return {
+    niche: settings.niche,
+    brandVoice: {
+      toneFormality: settings.formality[0],
+      toneHumor: settings.humor[0],
+      toneInspiration: settings.inspiration[0],
+    },
+    contentMix: {
+      educational: settings.educational[0],
+      inspirational: settings.inspirational[0],
+      entertaining: settings.entertaining[0],
+      promotional: settings.promotional[0],
+    },
+    postsPerDay: parseInt(settings.postsPerDay) || 3,
+  };
+}
+
+function applyApiResponse(
+  prev: SettingsData,
+  s: Record<string, unknown>,
+): SettingsData {
+  const bv = s.brandVoice as Record<string, number> | undefined;
+  const cm = s.contentMix as Record<string, number> | undefined;
+  return {
+    ...prev,
+    niche: (s.niche as Niche) ?? prev.niche,
+    formality: bv?.toneFormality != null ? [bv.toneFormality] : prev.formality,
+    humor: bv?.toneHumor != null ? [bv.toneHumor] : prev.humor,
+    inspiration: bv?.toneInspiration != null ? [bv.toneInspiration] : prev.inspiration,
+    educational: cm?.educational != null ? [cm.educational] : prev.educational,
+    inspirational: cm?.inspirational != null ? [cm.inspirational] : prev.inspirational,
+    entertaining: cm?.entertaining != null ? [cm.entertaining] : prev.entertaining,
+    promotional: cm?.promotional != null ? [cm.promotional] : prev.promotional,
+    postsPerDay: s.postsPerDay != null ? String(s.postsPerDay) : prev.postsPerDay,
+  };
+}
+
 export function useSettings() {
   const [settings, setSettings] = useState<SettingsData>(loadSettings);
   const [saved, setSaved] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipNextPersist = useRef(false);
 
-  // Load settings from API on mount
-  const isFirstRender = useRef(true);
+  // Fetch settings from Supabase on mount; overwrite localStorage cache
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/settings")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && data.settings) {
-          const s = data.settings;
-          setSettings((prev) => ({
-            ...prev,
-            niche: s.niche ?? prev.niche,
-            formality: s.brandVoice?.toneFormality != null ? [s.brandVoice.toneFormality] : prev.formality,
-            humor: s.brandVoice?.toneHumor != null ? [s.brandVoice.toneHumor] : prev.humor,
-            inspiration: s.brandVoice?.toneInspiration != null ? [s.brandVoice.toneInspiration] : prev.inspiration,
-            educational: s.contentMix?.educational != null ? [s.contentMix.educational] : prev.educational,
-            inspirational: s.contentMix?.inspirational != null ? [s.contentMix.inspirational] : prev.inspirational,
-            entertaining: s.contentMix?.entertaining != null ? [s.contentMix.entertaining] : prev.entertaining,
-            promotional: s.contentMix?.promotional != null ? [s.contentMix.promotional] : prev.promotional,
-            postsPerDay: s.postsPerDay?.toString() ?? prev.postsPerDay,
-          }));
-        }
+      .then((res) => {
+        if (!res.ok) throw new Error("fetch failed");
+        return res.json();
       })
-      .catch(() => {});
+      .then((data: { success: boolean; settings?: Record<string, unknown> }) => {
+        if (cancelled || !data.success || !data.settings) return;
+        skipNextPersist.current = true;
+        setSettings((prev) => {
+          const merged = applyApiResponse(prev, data.settings!);
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+          } catch { /* ignore */ }
+          return merged;
+        });
+      })
+      .catch(() => { /* API unavailable — keep localStorage / defaults */ });
+    return () => { cancelled = true; };
   }, []);
 
-  // Persist to localStorage + API whenever settings change (skip initial mount)
+  // Persist to localStorage immediately + debounce PUT to API
+  const isFirstRender = useRef(true);
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    if (typeof window === "undefined") return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch {
-      // Storage full or unavailable — silently ignore
+    if (skipNextPersist.current) {
+      skipNextPersist.current = false;
+      return;
     }
 
-    // Sync to API (debounced via the timer)
-    setSaved(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setSaved(false);
+    // Write to localStorage right away (fast cache)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    } catch { /* ignore */ }
+
+    // Debounce API call at 500ms
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
       fetch("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          niche: settings.niche,
-          brandVoice: {
-            toneFormality: settings.formality[0],
-            toneHumor: settings.humor[0],
-            toneInspiration: settings.inspiration[0],
-          },
-          contentMix: {
-            educational: settings.educational[0],
-            inspirational: settings.inspirational[0],
-            entertaining: settings.entertaining[0],
-            promotional: settings.promotional[0],
-          },
-          postsPerDay: parseInt(settings.postsPerDay) || 3,
-        }),
-      }).catch(() => {});
-    }, 1500);
+        body: JSON.stringify(toApiPayload(settings)),
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error("put failed");
+          // Flash "Saved" indicator for 2 seconds
+          setSaved(true);
+          if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+          savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
+        })
+        .catch(() => { /* API error — localStorage still has the data */ });
+    }, 500);
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [settings]);
 
   const update = useCallback(<K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {

@@ -4,12 +4,9 @@ import Link from "next/link";
 import {
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
   Plus,
   Workflow,
   Users,
@@ -25,12 +22,9 @@ import { Pipeline, AGENT_TYPE_META, AgentType } from "@/lib/types";
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   Search,
   PenTool,
-  Hash,
   Image,
   Clock,
   Send,
-  MessageCircle,
-  BarChart3,
 };
 
 function getAgentIcon(iconName: string) {
