@@ -1,6 +1,6 @@
-import { AIProvider, ContentType } from "./types";
+import { AIProvider, ContentType, Platform } from "./types";
 
-export type StoredContentStatus = "generated" | "queued" | "published" | "failed";
+export type StoredContentStatus = "generated" | "queued" | "scheduled" | "published" | "failed";
 
 export interface StoredContent {
   id: string;
@@ -13,6 +13,8 @@ export interface StoredContent {
   accountHandle: string;
   createdAt: string;
   status: StoredContentStatus;
+  scheduledFor?: string;
+  targetPlatform?: Platform;
 }
 
 const STORAGE_KEY = "brandpilot_content";
@@ -66,4 +68,34 @@ export function moveToQueue(contentId: string): void {
 export function deleteContent(contentId: string): void {
   const items = readStore().filter((item) => item.id !== contentId);
   writeStore(items);
+}
+
+export function scheduleContent(
+  contentId: string,
+  scheduledDate: string,
+  platform: Platform
+): void {
+  const items = readStore();
+  const idx = items.findIndex((item) => item.id === contentId);
+  if (idx !== -1) {
+    items[idx].status = "scheduled";
+    items[idx].scheduledFor = scheduledDate;
+    items[idx].targetPlatform = platform;
+    writeStore(items);
+  }
+}
+
+export function getScheduledContent(): StoredContent[] {
+  return readStore().filter((item) => item.status === "scheduled");
+}
+
+export function unscheduleContent(contentId: string): void {
+  const items = readStore();
+  const idx = items.findIndex((item) => item.id === contentId);
+  if (idx !== -1) {
+    items[idx].status = "queued";
+    items[idx].scheduledFor = undefined;
+    items[idx].targetPlatform = undefined;
+    writeStore(items);
+  }
 }

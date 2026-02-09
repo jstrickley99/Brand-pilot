@@ -13,7 +13,7 @@ export type Niche =
 
 export type ContentType = "image" | "carousel" | "reel" | "story";
 
-export type ContentStatus = "queued" | "published" | "draft" | "failed";
+export type ContentStatus = "queued" | "scheduled" | "published" | "draft" | "failed";
 
 export type AutonomyLevel = "full_auto" | "semi_auto" | "approval_required";
 
