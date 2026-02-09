@@ -127,6 +127,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<ExecuteNo
 
     // Format the JSON output nicely for display
     const parsed = JSON.parse(jsonStr);
+
+    // For media_creator nodes, attempt to generate an actual image via DALL-E
+    if (type === "media_creator" && parsed.imageDescription) {
+      try {
+        const openaiClient = new OpenAI({ apiKey });
+        const imageResponse = await openaiClient.images.generate({
+          model: "dall-e-3",
+          prompt: parsed.imageDescription,
+          n: 1,
+          size: "1024x1024",
+          style: "natural",
+        });
+        const generatedImageUrl = imageResponse.data?.[0]?.url;
+        if (generatedImageUrl) {
+          parsed.generatedImageUrl = generatedImageUrl;
+        }
+      } catch {
+        // Image generation is best-effort; the visual brief is still useful without it
+      }
+    }
+
     const formattedOutput = JSON.stringify(parsed, null, 2);
 
     return NextResponse.json({
