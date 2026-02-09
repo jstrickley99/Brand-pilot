@@ -1,17 +1,24 @@
 import { NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
+import { auth } from "@clerk/nextjs/server";
 
 const nango = new Nango({ secretKey: process.env.NANGO_SECRET_KEY! });
 
-const HARDCODED_USER_ID = "brandpilot-user-1";
-
 export async function POST() {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
   try {
     const session = await nango.createConnectSession({
       end_user: {
-        id: HARDCODED_USER_ID,
-        email: "demo@brandpilot.ai",
-        display_name: "BrandPilot Demo User",
+        id: userId,
+        display_name: "BrandPilot User",
       },
       allowed_integrations: ["instagram"],
     });

@@ -21,12 +21,16 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockPipelines } from "@/lib/mock-data";
-import type { Pipeline, AgentNode, AgentType, PipelineConnection } from "@/lib/types";
+import { mockPipelines, mockAccounts } from "@/lib/mock-data";
+import type { Pipeline, AgentNode, AgentType, AIProvider, PipelineConnection, ExecutionMode } from "@/lib/types";
 import { AGENT_TYPE_META } from "@/lib/types";
 import { PipelineCanvas } from "@/components/agents/pipeline-canvas";
 import { ConfigPanel } from "@/components/agents/config-panel";
 import { AssignAccounts } from "@/components/agents/assign-accounts";
+import { ExecutionBar } from "@/components/agents/execution-bar";
+import { ExecutionOutputPanel } from "@/components/agents/execution-output-panel";
+import { useExecutionRunner } from "@/lib/use-execution-runner";
+import { hasApiKey } from "@/lib/api-keys";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   Search, PenTool, Hash, Image, Clock, Send, MessageCircle, BarChart3,
@@ -68,8 +72,38 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
   const [isAgentPickerOpen, setIsAgentPickerOpen] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [mode, setMode] = useState<ExecutionMode>("build");
+  const [aiProvider, setAiProvider] = useState<AIProvider>("anthropic");
 
   const selectedNode = selectedNodeId ? pipeline.nodes.find((n) => n.id === selectedNodeId) ?? null : null;
+
+  // Resolve account context from assigned accounts
+  const assignedAccount = pipeline.assignedAccountIds.length > 0
+    ? mockAccounts.find((a) => a.id === pipeline.assignedAccountIds[0])
+    : null;
+
+  const accountContext = assignedAccount
+    ? {
+        handle: assignedAccount.handle,
+        niche: assignedAccount.niche,
+        brandVoice: {
+          toneFormality: assignedAccount.brandVoice.toneFormality,
+          toneHumor: assignedAccount.brandVoice.toneHumor,
+          toneInspiration: assignedAccount.brandVoice.toneInspiration,
+        },
+      }
+    : null;
+
+  // Real execution runner
+  const simulator = useExecutionRunner({
+    nodes: pipeline.nodes,
+    connections: pipeline.connections,
+    pipelineId: pipeline.id,
+    accountContext,
+    provider: aiProvider,
+  });
+
+  const isExecutionMode = mode === "execute";
 
   // --- Node selection ---
   const handleSelectNode = useCallback((nodeId: string | null) => {
@@ -105,10 +139,8 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
       isActive: false,
     };
 
-    // Auto-connect: link from the last node in the chain to the new node
     const newConnections = [...pipeline.connections];
     if (pipeline.nodes.length > 0) {
-      // Find the last node that has no outgoing connection
       const nodesWithOutgoing = new Set(pipeline.connections.map((c) => c.sourceNodeId));
       const lastNode = [...pipeline.nodes].reverse().find((n) => !nodesWithOutgoing.has(n.id));
       if (lastNode) {
@@ -136,7 +168,6 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
       nodes: prev.nodes.map((node) => {
         if (node.id !== nodeId) return node;
         const updated = { ...node, ...updates };
-        // Auto-set status to configured when config is provided
         if (updates.config !== undefined && updates.config !== null) {
           updated.status = "configured";
         }
@@ -148,19 +179,14 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
   // --- Delete node ---
   const handleDeleteNode = useCallback((nodeId: string) => {
     setPipeline((prev) => {
-      // Remove the node
       const remainingNodes = prev.nodes.filter((n) => n.id !== nodeId);
-
-      // Find connections that involve this node
       const incomingConn = prev.connections.find((c) => c.targetNodeId === nodeId);
       const outgoingConn = prev.connections.find((c) => c.sourceNodeId === nodeId);
 
-      // Remove connections involving this node
       let newConnections = prev.connections.filter(
         (c) => c.sourceNodeId !== nodeId && c.targetNodeId !== nodeId
       );
 
-      // Re-connect: if node had both incoming and outgoing, bridge them
       if (incomingConn && outgoingConn) {
         newConnections.push({
           id: `conn-${Date.now()}`,
@@ -239,10 +265,22 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
     }));
   }, []);
 
-  // --- Duplicate pipeline ---
-  const handleDuplicate = useCallback(() => {
-    setSaveMessage("Pipeline duplicated (local only)");
-    setTimeout(() => setSaveMessage(null), 2000);
+  // --- Run Pipeline ---
+  const handleRunPipeline = useCallback(() => {
+    if (!hasApiKey(aiProvider)) {
+      setSaveMessage(`Add your ${aiProvider === "anthropic" ? "Anthropic" : "OpenAI"} API key in Settings first`);
+      setTimeout(() => setSaveMessage(null), 3000);
+      return;
+    }
+    setMode("execute");
+    setSelectedNodeId(null);
+    simulator.start();
+  }, [simulator, aiProvider]);
+
+  // --- Back to Builder ---
+  const handleBackToBuilder = useCallback(() => {
+    setMode("build");
+    setSelectedNodeId(null);
   }, []);
 
   // --- Status display ---
@@ -253,6 +291,17 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
       : pipeline.status === "paused"
       ? "bg-[#F97316]/10 text-[#F97316] border-[#F97316]/20"
       : "bg-[#94A3B8]/10 text-[#94A3B8] border-[#94A3B8]/20";
+
+  // Get the node run for the selected node (in execution mode)
+  const selectedNodeRun = isExecutionMode && selectedNodeId && simulator.currentRun
+    ? simulator.currentRun.nodeRuns.find((nr) => nr.nodeId === selectedNodeId) ?? null
+    : null;
+
+  // Determine if streaming text applies to the selected node
+  const selectedStreamingText =
+    isExecutionMode && selectedNodeId === simulator.activeNodeId
+      ? simulator.streamingText
+      : "";
 
   return (
     <div className="min-h-screen bg-[#0B0F19]">
@@ -269,7 +318,7 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
           </Link>
 
           <div className="flex items-center gap-3">
-            {isEditingName ? (
+            {!isExecutionMode && isEditingName ? (
               <input
                 type="text"
                 value={pipelineName}
@@ -281,20 +330,26 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
               />
             ) : (
               <button
-                onClick={() => setIsEditingName(true)}
-                className="text-lg font-semibold text-[#F8FAFC] hover:text-[#3B82F6] transition-colors py-0.5 px-1 -ml-1 rounded"
-                title="Click to rename"
+                onClick={() => !isExecutionMode && setIsEditingName(true)}
+                className={cn(
+                  "text-lg font-semibold text-[#F8FAFC] py-0.5 px-1 -ml-1 rounded",
+                  !isExecutionMode && "hover:text-[#3B82F6] transition-colors cursor-pointer",
+                  isExecutionMode && "cursor-default"
+                )}
+                title={isExecutionMode ? undefined : "Click to rename"}
               >
                 {pipelineName}
               </button>
             )}
 
-            <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", statusColor)}>
-              {statusLabel}
-            </span>
+            {!isExecutionMode && (
+              <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", statusColor)}>
+                {statusLabel}
+              </span>
+            )}
 
             {/* Save feedback toast */}
-            {saveMessage && (
+            {saveMessage && !isExecutionMode && (
               <span className="text-xs font-medium text-[#F97316] animate-pulse">
                 {saveMessage}
               </span>
@@ -302,48 +357,83 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
           </div>
         </div>
 
-        {/* Right: actions */}
+        {/* Right: actions — conditional on mode */}
         <div className="flex items-center gap-3">
-          {/* Assign Accounts dropdown */}
-          <AssignAccounts
-            assignedAccountIds={pipeline.assignedAccountIds}
-            onAssign={handleAssignAccounts}
-          />
+          {isExecutionMode && simulator.currentRun ? (
+            <ExecutionBar
+              run={simulator.currentRun}
+              totalNodes={pipeline.nodes.length}
+              onStop={simulator.stop}
+              onRetry={simulator.retry}
+              onSkip={simulator.skip}
+              onBackToBuilder={handleBackToBuilder}
+            />
+          ) : (
+            <>
+              {/* Assign Accounts dropdown */}
+              <AssignAccounts
+                assignedAccountIds={pipeline.assignedAccountIds}
+                onAssign={handleAssignAccounts}
+              />
 
-          {/* Pause/Resume (only for active/paused pipelines) */}
-          {(pipeline.status === "active" || pipeline.status === "paused") && (
-            <button
-              onClick={handleTogglePause}
-              className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-lg border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#111827] transition-colors"
-              title={pipeline.status === "active" ? "Pause pipeline" : "Resume pipeline"}
-            >
-              {pipeline.status === "active" ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {pipeline.status === "active" ? "Pause" : "Resume"}
-            </button>
+              {/* Pause/Resume */}
+              {(pipeline.status === "active" || pipeline.status === "paused") && (
+                <button
+                  onClick={handleTogglePause}
+                  className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-lg border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#111827] transition-colors"
+                  title={pipeline.status === "active" ? "Pause pipeline" : "Resume pipeline"}
+                >
+                  {pipeline.status === "active" ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                  {pipeline.status === "active" ? "Pause" : "Resume"}
+                </button>
+              )}
+
+              {/* Run Pipeline (only for active pipelines) */}
+              {pipeline.status === "active" && (
+                <div className="flex items-center gap-1">
+                  {/* Provider selector */}
+                  <select
+                    value={aiProvider}
+                    onChange={(e) => setAiProvider(e.target.value as AIProvider)}
+                    className="h-9 px-2 text-xs font-medium rounded-l-lg border border-[#1E293B] bg-[#111827] text-[#94A3B8] focus:outline-none focus:border-[#8B5CF6] transition-colors cursor-pointer"
+                  >
+                    <option value="anthropic">Claude</option>
+                    <option value="openai">GPT-4o</option>
+                  </select>
+                  <button
+                    onClick={handleRunPipeline}
+                    className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-r-lg bg-[#8B5CF6] text-white hover:bg-[#7C3AED] shadow-sm shadow-[#8B5CF6]/25 transition-colors"
+                  >
+                    <Play className="w-4 h-4" />
+                    Run
+                  </button>
+                </div>
+              )}
+
+              {/* Save as Draft */}
+              <button
+                onClick={handleSaveAsDraft}
+                className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-lg border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#111827] transition-colors"
+              >
+                <Save className="w-4 h-4" />
+                Save as Draft
+              </button>
+
+              {/* Deploy Agent */}
+              <button
+                onClick={handleDeploy}
+                className={cn(
+                  "inline-flex items-center gap-2 h-9 px-5 text-sm font-medium rounded-lg shadow-sm transition-colors",
+                  pipeline.status === "active"
+                    ? "bg-[#10B981] text-white hover:bg-[#059669] shadow-[#10B981]/25"
+                    : "bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[#3B82F6]/25"
+                )}
+              >
+                <Rocket className="w-4 h-4" />
+                {pipeline.status === "active" ? "Deployed" : "Deploy Agent"}
+              </button>
+            </>
           )}
-
-          {/* Save as Draft */}
-          <button
-            onClick={handleSaveAsDraft}
-            className="inline-flex items-center gap-2 h-9 px-4 text-sm font-medium rounded-lg border border-[#1E293B] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#111827] transition-colors"
-          >
-            <Save className="w-4 h-4" />
-            Save as Draft
-          </button>
-
-          {/* Deploy Agent */}
-          <button
-            onClick={handleDeploy}
-            className={cn(
-              "inline-flex items-center gap-2 h-9 px-5 text-sm font-medium rounded-lg shadow-sm transition-colors",
-              pipeline.status === "active"
-                ? "bg-[#10B981] text-white hover:bg-[#059669] shadow-[#10B981]/25"
-                : "bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[#3B82F6]/25"
-            )}
-          >
-            <Rocket className="w-4 h-4" />
-            {pipeline.status === "active" ? "Deployed" : "Deploy Agent"}
-          </button>
         </div>
       </div>
 
@@ -356,11 +446,14 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
           onSelectNode={handleSelectNode}
           onNodePositionChange={handleNodePositionChange}
           onAddNode={handleAddNode}
+          isExecutionMode={isExecutionMode}
+          currentRun={simulator.currentRun}
+          activeNodeId={simulator.activeNodeId}
         />
       </div>
 
-      {/* Agent picker overlay */}
-      {isAgentPickerOpen && (
+      {/* Agent picker overlay — only in build mode */}
+      {!isExecutionMode && isAgentPickerOpen && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
           onClick={() => setIsAgentPickerOpen(false)}
@@ -416,13 +509,22 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
         </div>
       )}
 
-      {/* Config panel (side panel) */}
-      {selectedNode && (
+      {/* Side panel: Config (build mode) or Execution Output (execute mode) */}
+      {selectedNode && !isExecutionMode && (
         <ConfigPanel
           node={selectedNode}
           onClose={() => setSelectedNodeId(null)}
           onUpdate={handleUpdateNode}
           onDelete={handleDeleteNode}
+        />
+      )}
+
+      {selectedNode && isExecutionMode && (
+        <ExecutionOutputPanel
+          node={selectedNode}
+          nodeRun={selectedNodeRun}
+          streamingText={selectedStreamingText}
+          onClose={() => setSelectedNodeId(null)}
         />
       )}
     </div>

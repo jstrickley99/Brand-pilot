@@ -1,15 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
+import { auth } from "@clerk/nextjs/server";
 
 const nango = new Nango({ secretKey: process.env.NANGO_SECRET_KEY! });
 
-const HARDCODED_USER_ID = "brandpilot-user-1";
-
 export async function GET(request: NextRequest) {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized" },
+      { status: 401 }
+    );
+  }
+
   try {
     const providerConfigKey = request.nextUrl.searchParams.get("provider") || "instagram";
 
-    const connection = await nango.getConnection(providerConfigKey, HARDCODED_USER_ID);
+    const connection = await nango.getConnection(providerConfigKey, userId);
 
     return NextResponse.json({
       success: true,

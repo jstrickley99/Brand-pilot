@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs";
 import { Sidebar } from "@/components/layout/sidebar";
 import { SidebarProvider } from "@/components/layout/sidebar-context";
 import { MainContent } from "@/components/layout/main-content";
@@ -23,14 +24,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.variable} antialiased`}>
-        <SidebarProvider>
-          <Sidebar />
-          <MainContent>{children}</MainContent>
-          <OnboardingWizard />
-        </SidebarProvider>
-      </body>
-    </html>
+    <ClerkProvider dynamic>
+      <html lang="en" className="dark">
+        <body className={`${inter.variable} antialiased`}>
+          <SignedIn>
+            <SidebarProvider>
+              <Sidebar />
+              <MainContent>{children}</MainContent>
+              <OnboardingWizard />
+            </SidebarProvider>
+          </SignedIn>
+          <SignedOut>
+            {children}
+          </SignedOut>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

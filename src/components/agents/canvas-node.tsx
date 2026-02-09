@@ -10,9 +10,12 @@ import {
   Send,
   MessageCircle,
   BarChart3,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AgentNode, AgentNodeStatus } from "@/lib/types";
+import type { AgentNode, AgentNodeStatus, NodeRunStatus } from "@/lib/types";
 import { AGENT_TYPE_META as agentTypeMeta } from "@/lib/types";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -38,6 +41,8 @@ interface CanvasNodeProps {
   onSelect: (nodeId: string) => void;
   onPositionChange: (nodeId: string, position: { x: number; y: number }) => void;
   zoom: number;
+  executionStatus?: NodeRunStatus;
+  isExecutionMode?: boolean;
 }
 
 export function CanvasNode({
@@ -46,6 +51,8 @@ export function CanvasNode({
   onSelect,
   onPositionChange,
   zoom,
+  executionStatus,
+  isExecutionMode = false,
 }: CanvasNodeProps) {
   const isDragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0 });
@@ -56,9 +63,16 @@ export function CanvasNode({
   const IconComponent = meta ? iconMap[meta.iconName] : Search;
   const accentColor = meta?.accentColor ?? "#3B82F6";
 
+  // Execution status visual overrides
+  const isRunning = executionStatus === "running";
+  const isComplete = executionStatus === "complete";
+  const isError = executionStatus === "error";
+  const isCancelled = executionStatus === "cancelled";
+  const isSkipped = executionStatus === "skipped";
+
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Prevent triggering on connector clicks
+      if (isExecutionMode) return; // No dragging in execution mode
       if ((e.target as HTMLElement).dataset.connector) return;
 
       e.stopPropagation();
@@ -91,27 +105,82 @@ export function CanvasNode({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [node.id, node.position.x, node.position.y, onPositionChange, zoom]
+    [node.id, node.position.x, node.position.y, onPositionChange, zoom, isExecutionMode]
   );
 
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
-      // Only fire select if we did not drag
-      if (!hasMoved.current) {
+      if (!hasMoved.current || isExecutionMode) {
         e.stopPropagation();
         onSelect(node.id);
       }
     },
-    [node.id, onSelect]
+    [node.id, onSelect, isExecutionMode]
   );
+
+  // Determine border style
+  const borderClass = isRunning
+    ? "border-[#3B82F6] shadow-lg shadow-[#3B82F6]/20"
+    : isComplete
+    ? "border-[#10B981] shadow-lg shadow-[#10B981]/10"
+    : isError
+    ? "border-[#EF4444] shadow-lg shadow-[#EF4444]/10"
+    : isSelected
+    ? "border-[#3B82F6] shadow-lg shadow-[#3B82F6]/10"
+    : "border-[#1E293B] hover:border-[#334155]";
+
+  // Status dot rendering
+  const renderStatusDot = () => {
+    if (isExecutionMode && executionStatus) {
+      if (isRunning) {
+        return (
+          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#111827] flex items-center justify-center">
+            <Loader2 className="w-3.5 h-3.5 text-[#3B82F6] animate-spin" />
+          </div>
+        );
+      }
+      if (isComplete) {
+        return (
+          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#10B981] flex items-center justify-center">
+            <Check className="w-3 h-3 text-white" />
+          </div>
+        );
+      }
+      if (isError) {
+        return (
+          <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#EF4444] flex items-center justify-center">
+            <X className="w-3 h-3 text-white" />
+          </div>
+        );
+      }
+      if (isCancelled || isSkipped) {
+        return (
+          <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827] bg-[#94A3B8]" />
+        );
+      }
+      // Idle
+      return (
+        <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827] bg-[#475569]" />
+      );
+    }
+
+    return (
+      <div
+        className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827]"
+        style={{ backgroundColor: statusColors[node.status] }}
+        title={node.status}
+      />
+    );
+  };
 
   return (
     <div
       className={cn(
-        "absolute group bg-[#111827] border rounded-xl p-4 min-w-[180px] cursor-grab active:cursor-grabbing transition-shadow duration-150 select-none",
-        isSelected
-          ? "border-[#3B82F6] shadow-lg shadow-[#3B82F6]/10"
-          : "border-[#1E293B] hover:border-[#334155]"
+        "absolute group bg-[#111827] border rounded-xl p-4 min-w-[180px] transition-all duration-150 select-none",
+        isExecutionMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
+        borderClass,
+        isRunning && "exec-node-pulse",
+        isError && "exec-node-shake"
       )}
       style={{
         left: node.position.x,
@@ -121,23 +190,43 @@ export function CanvasNode({
       onMouseDown={handleMouseDown}
       onClick={handleClick}
     >
-      {/* Status dot - top right */}
-      <div
-        className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827]"
-        style={{ backgroundColor: statusColors[node.status] }}
-        title={node.status}
-      />
+      <style>{`
+        @keyframes exec-node-pulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.15); }
+          50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
+        }
+        @keyframes exec-node-shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-3px); }
+          40% { transform: translateX(3px); }
+          60% { transform: translateX(-2px); }
+          80% { transform: translateX(2px); }
+        }
+        .exec-node-pulse { animation: exec-node-pulse 2s ease-in-out infinite; }
+        .exec-node-shake { animation: exec-node-shake 0.4s ease-in-out; }
+      `}</style>
 
-      {/* Input connector - left edge */}
+      {/* Status dot */}
+      {renderStatusDot()}
+
+      {/* Input connector */}
       <div
         data-connector="input"
-        className="absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-[#3B82F6] rounded-full border-2 border-[#0B0F19] hover:scale-125 transition-transform"
+        className={cn(
+          "absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#0B0F19] transition-transform",
+          isComplete ? "bg-[#10B981]" : isRunning ? "bg-[#3B82F6]" : "bg-[#3B82F6]",
+          !isExecutionMode && "hover:scale-125"
+        )}
       />
 
-      {/* Output connector - right edge */}
+      {/* Output connector */}
       <div
         data-connector="output"
-        className="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3 h-3 bg-[#3B82F6] rounded-full border-2 border-[#0B0F19] hover:scale-125 transition-transform"
+        className={cn(
+          "absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#0B0F19] transition-transform",
+          isComplete ? "bg-[#10B981]" : isRunning ? "bg-[#3B82F6]" : "bg-[#3B82F6]",
+          !isExecutionMode && "hover:scale-125"
+        )}
       />
 
       {/* Node content */}

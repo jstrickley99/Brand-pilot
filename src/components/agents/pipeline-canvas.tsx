@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { Bot, Plus, ZoomIn, ZoomOut, Maximize } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Pipeline, AgentNode, PipelineConnection } from "@/lib/types";
+import type { Pipeline, AgentNode, PipelineConnection, PipelineRun, NodeRunStatus } from "@/lib/types";
 import { CanvasNode } from "./canvas-node";
 import { NodeConnection } from "./node-connection";
 
@@ -13,8 +13,8 @@ const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
 const NODE_WIDTH = 180;
 const NODE_HEIGHT = 72;
-const CONNECTOR_OFFSET_X = 6; // Half of connector width (3px w-3 -> 6px offset from edge)
-const START_NODE_SIZE = 64; // w-16 = 64px
+const CONNECTOR_OFFSET_X = 6;
+const START_NODE_SIZE = 64;
 
 interface PipelineCanvasProps {
   pipeline: Pipeline;
@@ -23,6 +23,9 @@ interface PipelineCanvasProps {
   onSelectNode: (nodeId: string | null) => void;
   onNodePositionChange: (nodeId: string, position: { x: number; y: number }) => void;
   onAddNode: () => void;
+  isExecutionMode?: boolean;
+  currentRun?: PipelineRun | null;
+  activeNodeId?: string | null;
 }
 
 export function PipelineCanvas({
@@ -32,6 +35,9 @@ export function PipelineCanvas({
   onSelectNode,
   onNodePositionChange,
   onAddNode,
+  isExecutionMode = false,
+  currentRun,
+  activeNodeId,
 }: PipelineCanvasProps) {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -40,15 +46,12 @@ export function PipelineCanvas({
   const panOrigin = useRef({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Deselect node when clicking on empty canvas
   const handleCanvasClick = useCallback(() => {
     onSelectNode(null);
   }, [onSelectNode]);
 
-  // Pan: mouse down on canvas background
   const handleCanvasMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Only pan on direct canvas background clicks (left button)
       if (e.button !== 0) return;
       if (e.target !== e.currentTarget && !(e.target as HTMLElement).dataset.canvasBg) return;
 
@@ -78,7 +81,6 @@ export function PipelineCanvas({
     [pan.x, pan.y]
   );
 
-  // Zoom: mouse wheel
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     setZoom((prev) => {
@@ -88,7 +90,6 @@ export function PipelineCanvas({
     });
   }, []);
 
-  // Zoom controls
   const zoomIn = useCallback(() => {
     setZoom((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 100) / 100));
   }, []);
@@ -97,7 +98,6 @@ export function PipelineCanvas({
     setZoom((prev) => Math.max(MIN_ZOOM, Math.round((prev - ZOOM_STEP) * 100) / 100));
   }, []);
 
-  // Fit to screen: center all nodes in viewport
   const fitToScreen = useCallback(() => {
     if (!canvasRef.current || nodes.length === 0) {
       setPan({ x: 0, y: 0 });
@@ -108,7 +108,6 @@ export function PipelineCanvas({
     const container = canvasRef.current;
     const rect = container.getBoundingClientRect();
 
-    // Include start node at (100, center)
     const startX = 100;
     const startY = rect.height / 2 - START_NODE_SIZE / 2;
 
@@ -124,7 +123,7 @@ export function PipelineCanvas({
       maxY = Math.max(maxY, node.position.y + NODE_HEIGHT);
     }
 
-    const contentWidth = maxX - minX + 100; // padding
+    const contentWidth = maxX - minX + 100;
     const contentHeight = maxY - minY + 100;
 
     const scaleX = rect.width / contentWidth;
@@ -141,7 +140,6 @@ export function PipelineCanvas({
     setZoom(Math.round(newZoom * 100) / 100);
   }, [nodes]);
 
-  // Compute connection positions
   const getConnectionPositions = useCallback(
     (connection: PipelineConnection) => {
       const sourceNode = nodes.find((n) => n.id === connection.sourceNodeId);
@@ -163,11 +161,9 @@ export function PipelineCanvas({
     [nodes]
   );
 
-  // Compute start node connection to first node
   const getStartConnectionTarget = useCallback(() => {
     if (nodes.length === 0) return null;
 
-    // Find node(s) that are not targets of any connection (root nodes)
     const targetIds = new Set(pipeline.connections.map((c) => c.targetNodeId));
     const rootNodes = nodes.filter((n) => !targetIds.has(n.id));
     const firstNode = rootNodes.length > 0 ? rootNodes[0] : nodes[0];
@@ -175,13 +171,37 @@ export function PipelineCanvas({
     return firstNode;
   }, [nodes, pipeline.connections]);
 
-  // Calculate container dimensions
-  const containerHeight = "h-[calc(100vh-140px)]";
+  // Helper: get execution status for a node
+  const getNodeExecStatus = useCallback(
+    (nodeId: string): NodeRunStatus | undefined => {
+      if (!isExecutionMode || !currentRun) return undefined;
+      return currentRun.nodeRuns.find((nr) => nr.nodeId === nodeId)?.status;
+    },
+    [isExecutionMode, currentRun]
+  );
 
-  // Start node position
+  // Helper: get connection execution status
+  const getConnectionExecStatus = useCallback(
+    (sourceNodeId: string, targetNodeId: string): "idle" | "active" | "complete" | undefined => {
+      if (!isExecutionMode || !currentRun) return undefined;
+      const sourceRun = currentRun.nodeRuns.find((nr) => nr.nodeId === sourceNodeId);
+      const targetRun = currentRun.nodeRuns.find((nr) => nr.nodeId === targetNodeId);
+
+      if (!sourceRun || !targetRun) return "idle";
+
+      if (sourceRun.status === "complete" && targetRun.status === "running") return "active";
+      if (sourceRun.status === "complete" && (targetRun.status === "complete" || targetRun.status === "skipped")) return "complete";
+      if (sourceRun.status === "complete" || sourceRun.status === "skipped") return "idle";
+      return "idle";
+    },
+    [isExecutionMode, currentRun]
+  );
+
   const canvasHeight = canvasRef.current?.getBoundingClientRect().height ?? 600;
   const startNodeY = canvasHeight / 2 - START_NODE_SIZE / 2;
   const startNodeX = 100;
+
+  const containerHeight = "h-[calc(100vh-140px)]";
 
   return (
     <div
@@ -199,7 +219,6 @@ export function PipelineCanvas({
       onMouseDown={handleCanvasMouseDown}
       onClick={handleCanvasClick}
     >
-      {/* Transform wrapper for pan + zoom */}
       <div
         data-canvas-bg="true"
         className="absolute inset-0"
@@ -222,10 +241,19 @@ export function PipelineCanvas({
           <span className="text-xs text-[#64748B] font-medium">Start</span>
         </div>
 
-        {/* Start node connection to first root node */}
+        {/* Start node connection */}
         {(() => {
           const firstNode = getStartConnectionTarget();
           if (!firstNode) return null;
+
+          const firstNodeExecStatus = getNodeExecStatus(firstNode.id);
+          const startConnStatus = isExecutionMode
+            ? firstNodeExecStatus === "running"
+              ? "active"
+              : firstNodeExecStatus === "complete" || firstNodeExecStatus === "skipped"
+              ? "complete"
+              : "idle"
+            : undefined;
 
           return (
             <NodeConnection
@@ -238,11 +266,12 @@ export function PipelineCanvas({
                 x: firstNode.position.x - CONNECTOR_OFFSET_X,
                 y: firstNode.position.y + NODE_HEIGHT / 2,
               }}
+              executionStatus={startConnStatus}
             />
           );
         })()}
 
-        {/* Connections between nodes */}
+        {/* Connections */}
         {pipeline.connections.map((connection) => {
           const positions = getConnectionPositions(connection);
           if (!positions) return null;
@@ -253,6 +282,7 @@ export function PipelineCanvas({
               id={connection.id}
               sourcePosition={positions.source}
               targetPosition={positions.target}
+              executionStatus={getConnectionExecStatus(connection.sourceNodeId, connection.targetNodeId)}
             />
           );
         })}
@@ -266,11 +296,13 @@ export function PipelineCanvas({
             onSelect={onSelectNode}
             onPositionChange={onNodePositionChange}
             zoom={zoom}
+            isExecutionMode={isExecutionMode}
+            executionStatus={getNodeExecStatus(node.id)}
           />
         ))}
       </div>
 
-      {/* Zoom controls - bottom center */}
+      {/* Zoom controls */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-[#111827] border border-[#1E293B] rounded-lg p-1 shadow-lg">
         <button
           onClick={zoomOut}
@@ -301,20 +333,22 @@ export function PipelineCanvas({
         </button>
       </div>
 
-      {/* Add node FAB - bottom right */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onAddNode();
-        }}
-        className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#3B82F6] hover:bg-[#2563EB] text-white shadow-lg shadow-[#3B82F6]/25 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
-        title="Add agent node"
-      >
-        <Plus className="w-6 h-6" />
-      </button>
+      {/* Add node FAB - hidden in execution mode */}
+      {!isExecutionMode && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddNode();
+          }}
+          className="absolute bottom-6 right-6 w-14 h-14 rounded-full bg-[#3B82F6] hover:bg-[#2563EB] text-white shadow-lg shadow-[#3B82F6]/25 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+          title="Add agent node"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
 
       {/* Empty state */}
-      {nodes.length === 0 && (
+      {nodes.length === 0 && !isExecutionMode && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
             <div className="w-16 h-16 rounded-full bg-[#1E293B]/50 flex items-center justify-center mx-auto mb-4">

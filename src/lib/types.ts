@@ -283,6 +283,35 @@ export const AGENT_TYPE_META: AgentTypeMeta[] = [
   },
 ];
 
+// Execution types
+
+export type NodeRunStatus = "idle" | "running" | "complete" | "error" | "cancelled" | "skipped";
+
+export type PipelineRunStatus = "running" | "completed" | "stopped" | "error";
+
+export type ExecutionMode = "build" | "execute";
+
+export interface NodeRun {
+  nodeId: string;
+  status: NodeRunStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+  duration: number | null;
+  output: string[];
+  result: string | null;
+  error: string | null;
+}
+
+export interface PipelineRun {
+  id: string;
+  pipelineId: string;
+  status: PipelineRunStatus;
+  startedAt: string;
+  completedAt: string | null;
+  duration: number;
+  nodeRuns: NodeRun[];
+}
+
 export type Platform = "youtube" | "instagram" | "facebook" | "tiktok" | "twitter";
 
 export interface PlatformConnection {

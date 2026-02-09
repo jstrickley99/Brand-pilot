@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
+import { auth } from "@clerk/nextjs/server";
 import { GenerateContentRequest, GenerateContentResponse, GeneratedContent } from "@/lib/types";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/ai-prompts";
 
@@ -32,6 +33,12 @@ function parseJsonFromResponse(text: string): GeneratedContent | null {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<GenerateContentResponse>> {
+  const { userId } = await auth();
+
+  if (!userId) {
+    return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const apiKey = request.headers.get("x-ai-api-key");
     if (!apiKey) {

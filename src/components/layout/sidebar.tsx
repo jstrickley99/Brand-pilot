@@ -16,9 +16,9 @@ import {
   Plus,
   Smartphone,
   MessageSquare,
-  LogOut,
   Bot,
 } from "lucide-react";
+import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
 import { mockCredits } from "@/lib/mock-data";
@@ -146,15 +146,23 @@ export function Sidebar() {
                 <MessageSquare className="h-4 w-4" />
               </button>
             </div>
-            <button className="p-2 rounded-md hover:bg-[#1E293B]/50 text-[#64748B] hover:text-red-400 transition-colors">
-              <LogOut className="h-4 w-4" />
-            </button>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "h-8 w-8",
+                },
+              }}
+            />
           </div>
         ) : (
           <div className="flex flex-col items-center gap-1">
-            <button className="p-2 rounded-md hover:bg-[#1E293B]/50 text-[#64748B] hover:text-red-400 transition-colors">
-              <LogOut className="h-4 w-4" />
-            </button>
+            <UserButton
+              appearance={{
+                elements: {
+                  avatarBox: "h-8 w-8",
+                },
+              }}
+            />
           </div>
         )}
       </div>
