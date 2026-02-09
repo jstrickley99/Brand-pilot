@@ -48,7 +48,9 @@ export async function POST(
 
     // Get Instagram connection from Nango
     const connection = await nango.getConnection("instagram", userId);
-    const accessToken = connection.credentials.access_token;
+    const accessToken = "access_token" in connection.credentials
+      ? connection.credentials.access_token
+      : undefined;
 
     if (!accessToken) {
       return NextResponse.json(
