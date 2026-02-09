@@ -366,8 +366,8 @@ export const mockPlatformConnections: PlatformConnection[] = [
     id: "tt",
     platform: "tiktok",
     connected: false,
-    description: "Schedule and publish TikTok videos directly.",
-    requiresPro: true,
+    description: "Connect your TikTok account to schedule and publish videos.",
+    infoNotice: "Requires a TikTok Business or Creator account.",
   },
   {
     id: "tw",

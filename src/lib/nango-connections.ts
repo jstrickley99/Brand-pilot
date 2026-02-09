@@ -31,3 +31,13 @@ export function isInstagramConnected(): boolean {
   const conn = getNangoConnection("instagram");
   return conn?.connected === true;
 }
+
+export function isTikTokConnected(): boolean {
+  const conn = getNangoConnection("tiktok");
+  return conn?.connected === true;
+}
+
+export function isPlatformConnected(platform: string): boolean {
+  const conn = getNangoConnection(platform);
+  return conn?.connected === true;
+}

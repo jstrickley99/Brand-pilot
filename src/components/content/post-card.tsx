@@ -1,9 +1,11 @@
+import { ReactNode } from "react";
 import { ContentPost } from "@/lib/types";
 import { getStatusBgColor, formatDate, formatNumber } from "@/lib/utils";
 import { Heart, MessageCircle, Eye, Repeat2, Image, Layers, Film, Clock } from "lucide-react";
 
 interface PostCardProps {
   post: ContentPost;
+  actions?: ReactNode;
 }
 
 const typeIcons = {
@@ -13,7 +15,7 @@ const typeIcons = {
   story: Clock,
 };
 
-export function PostCard({ post }: PostCardProps) {
+export function PostCard({ post, actions }: PostCardProps) {
   const TypeIcon = typeIcons[post.type];
 
   return (
@@ -69,6 +71,13 @@ export function PostCard({ post }: PostCardProps) {
               <Eye className="h-3 w-3" />
               <span>{formatNumber(post.reach!)}</span>
             </div>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {actions && (
+          <div className="flex items-center gap-2 pt-3 border-t border-[#1E293B] mt-3">
+            {actions}
           </div>
         )}
       </div>

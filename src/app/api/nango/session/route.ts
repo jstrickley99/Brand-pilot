@@ -20,7 +20,7 @@ export async function POST() {
         id: userId,
         display_name: "BrandPilot User",
       },
-      allowed_integrations: ["instagram"],
+      allowed_integrations: ["instagram", "tiktok", "youtube"],
     });
 
     return NextResponse.json({

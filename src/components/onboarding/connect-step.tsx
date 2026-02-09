@@ -15,23 +15,34 @@ interface ConnectStepProps {
 export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) {
   const [connecting, setConnecting] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
-  const nango = useNangoConnect();
+  const instagram = useNangoConnect("instagram");
+  const tiktok = useNangoConnect("tiktok");
+  const youtube = useNangoConnect("youtube");
 
-  // Sync Nango Instagram connection state with wizard's connectedPlatforms
+  const nangoHooks: Record<string, typeof instagram> = {
+    ig: instagram,
+    tt: tiktok,
+    yt: youtube,
+  };
+
+  // Sync Nango connection states with wizard's connectedPlatforms
   useEffect(() => {
-    const igConnectedInWizard = connectedPlatforms.includes("ig");
-    const igConnectedInNango = nango.connection?.connected === true;
+    for (const [id, hook] of Object.entries(nangoHooks)) {
+      const inWizard = connectedPlatforms.includes(id);
+      const inNango = hook.connection?.connected === true;
 
-    if (igConnectedInNango && !igConnectedInWizard) {
-      onToggle("ig");
+      if (inNango && !inWizard) {
+        onToggle(id);
+      }
     }
-  }, [nango.connection?.connected, connectedPlatforms, onToggle]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [instagram.connection?.connected, tiktok.connection?.connected, youtube.connection?.connected, connectedPlatforms, onToggle]);
 
   async function handleConnect(platformId: string) {
-    if (platformId === "ig") {
-      // Real Instagram OAuth via Nango
-      await nango.connect();
-      // The useEffect above will sync wizard state when nango.connection updates
+    const hook = nangoHooks[platformId];
+    if (hook) {
+      // Real OAuth via Nango
+      await hook.connect();
       return;
     }
 
@@ -47,8 +58,9 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
   }
 
   function handleConfirmDisconnect(platformId: string) {
-    if (platformId === "ig") {
-      nango.disconnect();
+    const hook = nangoHooks[platformId];
+    if (hook) {
+      hook.disconnect();
     }
     onToggle(platformId);
     setConfirmDisconnect(null);
@@ -62,12 +74,12 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
       </p>
       <div className="space-y-3">
         {mockPlatformConnections.map((conn) => {
-          // For Instagram, derive connection state from Nango hook
-          const isIg = conn.id === "ig";
-          const isConnected = isIg
-            ? nango.connection?.connected === true
+          const hook = nangoHooks[conn.id];
+          const hasNango = !!hook;
+          const isConnected = hasNango
+            ? hook.connection?.connected === true
             : connectedPlatforms.includes(conn.id);
-          const isConnecting = isIg ? nango.isConnecting : connecting === conn.id;
+          const isConnecting = hasNango ? hook.isConnecting : connecting === conn.id;
           const isConfirming = confirmDisconnect === conn.id;
 
           return (
@@ -86,9 +98,9 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
                       {getPlatformLabel(conn.platform)}
                     </p>
                     <p className="text-xs text-[#94A3B8]">{conn.description}</p>
-                    {isIg && isConnected && nango.connection?.username && (
+                    {hasNango && isConnected && hook.connection?.username && (
                       <p className="text-xs text-emerald-400 mt-1">
-                        @{nango.connection.username}
+                        @{hook.connection.username}
                       </p>
                     )}
                     {conn.infoNotice && !conn.requiresPro && (
@@ -154,11 +166,11 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
                 )}
               </div>
 
-              {/* Show Nango error for Instagram */}
-              {isIg && nango.error && (
+              {/* Show Nango error */}
+              {hasNango && hook.error && (
                 <div className="flex items-center gap-2 mt-2 px-4 py-2 rounded-lg bg-red-400/10 border border-red-400/20">
                   <AlertCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
-                  <p className="text-xs text-red-400">{nango.error}</p>
+                  <p className="text-xs text-red-400">{hook.error}</p>
                 </div>
               )}
             </div>

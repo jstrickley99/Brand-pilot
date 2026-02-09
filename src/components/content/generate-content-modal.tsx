@@ -21,6 +21,7 @@ import { ApiKeyForm } from "./api-key-form";
 import { GenerationResult } from "./generation-result";
 import { AIProvider, ContentType, GeneratedContent, GenerateContentResponse } from "@/lib/types";
 import { hasApiKey, getApiKey } from "@/lib/api-keys";
+import { saveGeneratedContent } from "@/lib/content-store";
 import { mockAccounts } from "@/lib/mock-data";
 import { getNicheEmoji } from "@/lib/utils";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
@@ -30,9 +31,10 @@ type ModalState = "setup" | "api-key" | "generating" | "result" | "error";
 interface GenerateContentModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onContentSaved?: () => void;
 }
 
-export function GenerateContentModal({ open, onOpenChange }: GenerateContentModalProps) {
+export function GenerateContentModal({ open, onOpenChange, onContentSaved }: GenerateContentModalProps) {
   const [state, setState] = useState<ModalState>("setup");
   const [provider, setProvider] = useState<AIProvider>("anthropic");
   const [accountId, setAccountId] = useState("");
@@ -86,6 +88,17 @@ export function GenerateContentModal({ open, onOpenChange }: GenerateContentModa
       if (data.success && data.content) {
         setResult(data.content);
         setState("result");
+
+        saveGeneratedContent({
+          caption: data.content.caption,
+          hashtags: data.content.hashtags,
+          suggestedPostingTime: data.content.suggestedPostingTime,
+          provider: data.content.provider,
+          contentType,
+          accountId,
+          accountHandle: account.handle,
+        });
+        onContentSaved?.();
       } else {
         setError(data.error || "Failed to generate content");
         setState("error");

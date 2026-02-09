@@ -87,10 +87,10 @@ interface PlatformCardProps {
   onConnect?: () => void;
   onDisconnect?: () => void;
   isConnecting?: boolean;
-  igUsername?: string;
+  username?: string;
 }
 
-export function PlatformCard({ connection, onConnect, onDisconnect, isConnecting, igUsername }: PlatformCardProps) {
+export function PlatformCard({ connection, onConnect, onDisconnect, isConnecting, username }: PlatformCardProps) {
   const label = getPlatformLabel(connection.platform);
   const isConnected = connection.connected;
 
@@ -106,7 +106,7 @@ export function PlatformCard({ connection, onConnect, onDisconnect, isConnecting
             <p className="font-semibold text-[#F8FAFC]">{label}</p>
             {isConnected ? (
               <p className="text-xs text-emerald-400">
-                {igUsername ? `@${igUsername}` : "Connected"}
+                {username ? `@${username}` : "Connected"}
               </p>
             ) : (
               <p className="text-xs text-[#64748B]">Not connected</p>

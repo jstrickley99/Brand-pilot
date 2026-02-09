@@ -1,7 +1,6 @@
 "use client";
 
 import { getNicheEmoji, cn } from "@/lib/utils";
-import { useState } from "react";
 import { Niche } from "@/lib/types";
 
 const niches: { value: Niche; label: string }[] = [
@@ -16,9 +15,12 @@ const niches: { value: Niche; label: string }[] = [
   { value: "custom", label: "Custom" },
 ];
 
-export function NicheSelector() {
-  const [selected, setSelected] = useState<Niche>("fitness");
+interface NicheSelectorProps {
+  selected: Niche;
+  onSelect: (niche: Niche) => void;
+}
 
+export function NicheSelector({ selected, onSelect }: NicheSelectorProps) {
   return (
     <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
       <h3 className="font-semibold mb-2 text-[#F8FAFC]">Niche Selection</h3>
@@ -29,7 +31,7 @@ export function NicheSelector() {
         {niches.map((niche) => (
           <button
             key={niche.value}
-            onClick={() => setSelected(niche.value)}
+            onClick={() => onSelect(niche.value)}
             className={cn(
               "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all",
               selected === niche.value

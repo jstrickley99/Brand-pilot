@@ -1,13 +1,24 @@
 "use client";
 
 import { Slider } from "@/components/ui/slider";
-import { useState } from "react";
 
-export function BrandVoiceConfig() {
-  const [formality, setFormality] = useState([30]);
-  const [humor, setHumor] = useState([40]);
-  const [inspiration, setInspiration] = useState([80]);
+interface BrandVoiceConfigProps {
+  formality: number[];
+  humor: number[];
+  inspiration: number[];
+  onFormalityChange: (value: number[]) => void;
+  onHumorChange: (value: number[]) => void;
+  onInspirationChange: (value: number[]) => void;
+}
 
+export function BrandVoiceConfig({
+  formality,
+  humor,
+  inspiration,
+  onFormalityChange,
+  onHumorChange,
+  onInspirationChange,
+}: BrandVoiceConfigProps) {
   return (
     <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
       <h3 className="font-semibold mb-2 text-[#F8FAFC]">Brand Voice</h3>
@@ -23,7 +34,7 @@ export function BrandVoiceConfig() {
           </div>
           <Slider
             value={formality}
-            onValueChange={setFormality}
+            onValueChange={onFormalityChange}
             max={100}
             step={1}
             className="w-full"
@@ -38,7 +49,7 @@ export function BrandVoiceConfig() {
           </div>
           <Slider
             value={humor}
-            onValueChange={setHumor}
+            onValueChange={onHumorChange}
             max={100}
             step={1}
             className="w-full"
@@ -53,7 +64,7 @@ export function BrandVoiceConfig() {
           </div>
           <Slider
             value={inspiration}
-            onValueChange={setInspiration}
+            onValueChange={onInspirationChange}
             max={100}
             step={1}
             className="w-full"

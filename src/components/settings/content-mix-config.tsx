@@ -2,15 +2,32 @@
 
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
 
-export function ContentMixConfig() {
-  const [educational, setEducational] = useState([40]);
-  const [inspirational, setInspirational] = useState([25]);
-  const [entertaining, setEntertaining] = useState([20]);
-  const [promotional, setPromotional] = useState([15]);
-  const [postsPerDay, setPostsPerDay] = useState("3");
+interface ContentMixConfigProps {
+  educational: number[];
+  inspirational: number[];
+  entertaining: number[];
+  promotional: number[];
+  postsPerDay: string;
+  onEducationalChange: (value: number[]) => void;
+  onInspirationalChange: (value: number[]) => void;
+  onEntertainingChange: (value: number[]) => void;
+  onPromotionalChange: (value: number[]) => void;
+  onPostsPerDayChange: (value: string) => void;
+}
 
+export function ContentMixConfig({
+  educational,
+  inspirational,
+  entertaining,
+  promotional,
+  postsPerDay,
+  onEducationalChange,
+  onInspirationalChange,
+  onEntertainingChange,
+  onPromotionalChange,
+  onPostsPerDayChange,
+}: ContentMixConfigProps) {
   return (
     <div className="rounded-xl bg-[#111827] border border-[#1E293B] p-6">
       <h3 className="font-semibold mb-2 text-[#F8FAFC]">Content Mix</h3>
@@ -26,7 +43,7 @@ export function ContentMixConfig() {
           </div>
           <Slider
             value={educational}
-            onValueChange={setEducational}
+            onValueChange={onEducationalChange}
             max={100}
             step={5}
             className="w-full"
@@ -40,7 +57,7 @@ export function ContentMixConfig() {
           </div>
           <Slider
             value={inspirational}
-            onValueChange={setInspirational}
+            onValueChange={onInspirationalChange}
             max={100}
             step={5}
             className="w-full"
@@ -54,7 +71,7 @@ export function ContentMixConfig() {
           </div>
           <Slider
             value={entertaining}
-            onValueChange={setEntertaining}
+            onValueChange={onEntertainingChange}
             max={100}
             step={5}
             className="w-full"
@@ -68,7 +85,7 @@ export function ContentMixConfig() {
           </div>
           <Slider
             value={promotional}
-            onValueChange={setPromotional}
+            onValueChange={onPromotionalChange}
             max={100}
             step={5}
             className="w-full"
@@ -82,7 +99,7 @@ export function ContentMixConfig() {
             min={1}
             max={10}
             value={postsPerDay}
-            onChange={(e) => setPostsPerDay(e.target.value)}
+            onChange={(e) => onPostsPerDayChange(e.target.value)}
             className="w-24 bg-white/5 border-[#1E293B] text-[#F8FAFC]"
           />
         </div>
