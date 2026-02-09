@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Users, Check, ChevronDown } from "lucide-react";
 import { cn, formatNumber } from "@/lib/utils";
-import { mockAccounts } from "@/lib/mock-data";
 import type { InstagramAccount } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -13,6 +12,7 @@ import type { InstagramAccount } from "@/lib/types";
 interface AssignAccountsProps {
   assignedAccountIds: string[];
   onAssign: (accountIds: string[]) => void;
+  accounts: InstagramAccount[];
 }
 
 // ---------------------------------------------------------------------------
@@ -52,6 +52,7 @@ function AccountAvatar({
 export function AssignAccounts({
   assignedAccountIds,
   onAssign,
+  accounts,
 }: AssignAccountsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +61,7 @@ export function AssignAccounts({
   const selectedIds = new Set(assignedAccountIds);
 
   // Resolve assigned accounts for avatar thumbnails
-  const assignedAccounts = mockAccounts.filter((a) =>
+  const assignedAccounts = accounts.filter((a) =>
     selectedIds.has(a.id),
   );
 
@@ -193,7 +194,7 @@ export function AssignAccounts({
 
           {/* Account list */}
           <div className="max-h-64 overflow-y-auto scrollbar-thin">
-            {mockAccounts.map((account) => {
+            {accounts.map((account) => {
               const isSelected = selectedIds.has(account.id);
 
               return (
@@ -256,7 +257,7 @@ export function AssignAccounts({
               <div className="h-px bg-[#1E293B] mx-1 mt-1" />
               <div className="px-2 py-1.5 flex items-center justify-between">
                 <span className="text-xs text-[#64748B]">
-                  {selectedIds.size} of {mockAccounts.length} accounts
+                  {selectedIds.size} of {accounts.length} accounts
                 </span>
                 <button
                   type="button"

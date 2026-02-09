@@ -46,8 +46,32 @@ export function useSettings() {
   const [saved, setSaved] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Persist to localStorage whenever settings change (skip initial mount)
+  // Load settings from API on mount
   const isFirstRender = useRef(true);
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.settings) {
+          const s = data.settings;
+          setSettings((prev) => ({
+            ...prev,
+            niche: s.niche ?? prev.niche,
+            formality: s.brandVoice?.toneFormality != null ? [s.brandVoice.toneFormality] : prev.formality,
+            humor: s.brandVoice?.toneHumor != null ? [s.brandVoice.toneHumor] : prev.humor,
+            inspiration: s.brandVoice?.toneInspiration != null ? [s.brandVoice.toneInspiration] : prev.inspiration,
+            educational: s.contentMix?.educational != null ? [s.contentMix.educational] : prev.educational,
+            inspirational: s.contentMix?.inspirational != null ? [s.contentMix.inspirational] : prev.inspirational,
+            entertaining: s.contentMix?.entertaining != null ? [s.contentMix.entertaining] : prev.entertaining,
+            promotional: s.contentMix?.promotional != null ? [s.contentMix.promotional] : prev.promotional,
+            postsPerDay: s.postsPerDay?.toString() ?? prev.postsPerDay,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Persist to localStorage + API whenever settings change (skip initial mount)
   useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
@@ -59,9 +83,32 @@ export function useSettings() {
     } catch {
       // Storage full or unavailable — silently ignore
     }
+
+    // Sync to API (debounced via the timer)
     setSaved(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setSaved(false), 1500);
+    timerRef.current = setTimeout(() => {
+      setSaved(false);
+      fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          niche: settings.niche,
+          brandVoice: {
+            toneFormality: settings.formality[0],
+            toneHumor: settings.humor[0],
+            toneInspiration: settings.inspiration[0],
+          },
+          contentMix: {
+            educational: settings.educational[0],
+            inspirational: settings.inspirational[0],
+            entertaining: settings.entertaining[0],
+            promotional: settings.promotional[0],
+          },
+          postsPerDay: parseInt(settings.postsPerDay) || 3,
+        }),
+      }).catch(() => {});
+    }, 1500);
   }, [settings]);
 
   const update = useCallback(<K extends keyof SettingsData>(key: K, value: SettingsData[K]) => {

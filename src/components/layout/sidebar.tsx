@@ -21,7 +21,6 @@ import {
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "./sidebar-context";
-import { mockCredits } from "@/lib/mock-data";
 
 const platformNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -99,7 +98,7 @@ export function Sidebar() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-[#64748B]" />
-              <span className="text-sm font-medium text-[#F8FAFC]">{mockCredits.remaining.toLocaleString()}</span>
+              <span className="text-sm font-medium text-[#F8FAFC]">{(10000).toLocaleString()}</span>
               <span className="text-xs text-[#64748B]">credits</span>
             </div>
             <button className="h-6 w-6 rounded-md bg-[#F97316] hover:bg-[#F97316]/80 flex items-center justify-center transition-colors">

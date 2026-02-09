@@ -8,7 +8,6 @@ import { ContentHistory } from "@/components/content/content-history";
 import { PostCard } from "@/components/content/post-card";
 import { GenerateContentModal } from "@/components/content/generate-content-modal";
 import { Sparkles, ArrowRight, Trash2, CalendarClock, X } from "lucide-react";
-import { mockPosts } from "@/lib/mock-data";
 import {
   getContentByStatus,
   moveToQueue,
@@ -155,20 +154,8 @@ export default function ContentPage() {
     refresh();
   }
 
-  const mockDrafts = mockPosts.filter((p) => p.status === "draft");
-  const mockQueued = mockPosts.filter((p) => p.status === "queued");
-  const failed = mockPosts.filter((p) => p.status === "failed");
-
-  const allGenerated = [
-    ...generatedItems.map(storedToPost),
-    ...mockDrafts,
-  ];
-
-  const allQueued = [
-    ...queuedItems.map(storedToPost),
-    ...mockQueued,
-  ];
-
+  const allGenerated = generatedItems.map(storedToPost);
+  const allQueued = queuedItems.map(storedToPost);
   const allScheduled = scheduledItems.map(storedToPost);
 
   return (
@@ -190,13 +177,8 @@ export default function ContentPage() {
           </TabsTrigger>
           <TabsTrigger value="generated">Generated ({allGenerated.length})</TabsTrigger>
           <TabsTrigger value="history">
-            History ({mockPosts.filter((p) => p.status === "published").length})
+            History
           </TabsTrigger>
-          {failed.length > 0 && (
-            <TabsTrigger value="failed" className="text-red-400">
-              Failed ({failed.length})
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="queue">
@@ -342,18 +324,8 @@ export default function ContentPage() {
         </TabsContent>
 
         <TabsContent value="history">
-          <ContentHistory posts={mockPosts} />
+          <ContentHistory posts={[]} />
         </TabsContent>
-
-        {failed.length > 0 && (
-          <TabsContent value="failed">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {failed.map((post) => (
-                <PostCard key={post.id} post={post} />
-              ))}
-            </div>
-          </TabsContent>
-        )}
       </Tabs>
 
       <GenerateContentModal

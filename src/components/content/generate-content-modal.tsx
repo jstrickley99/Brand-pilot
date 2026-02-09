@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,8 +22,8 @@ import { GenerationResult } from "./generation-result";
 import { AIProvider, ContentType, GeneratedContent, GenerateContentResponse } from "@/lib/types";
 import { hasApiKey, getApiKey } from "@/lib/api-keys";
 import { saveGeneratedContent } from "@/lib/content-store";
-import { mockAccounts } from "@/lib/mock-data";
 import { getNicheEmoji } from "@/lib/utils";
+import type { InstagramAccount } from "@/lib/types";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 
 type ModalState = "setup" | "api-key" | "generating" | "result" | "error";
@@ -42,6 +42,18 @@ export function GenerateContentModal({ open, onOpenChange, onContentSaved }: Gen
   const [topic, setTopic] = useState("");
   const [result, setResult] = useState<GeneratedContent | null>(null);
   const [error, setError] = useState("");
+  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      fetch("/api/accounts")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) setAccounts(data.accounts);
+        })
+        .catch(() => {});
+    }
+  }, [open]);
 
   function resetState() {
     setState("setup");
@@ -61,7 +73,7 @@ export function GenerateContentModal({ open, onOpenChange, onContentSaved }: Gen
       return;
     }
 
-    const account = mockAccounts.find((a) => a.id === accountId);
+    const account = accounts.find((a) => a.id === accountId);
     if (!account) return;
 
     setState("generating");
@@ -146,7 +158,7 @@ export function GenerateContentModal({ open, onOpenChange, onContentSaved }: Gen
                     <SelectValue placeholder="Select account" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#111827] border-[#1E293B]">
-                    {mockAccounts.map((account) => (
+                    {accounts.map((account) => (
                       <SelectItem key={account.id} value={account.id}>
                         {getNicheEmoji(account.niche)} {account.handle}
                       </SelectItem>

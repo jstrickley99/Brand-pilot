@@ -17,7 +17,6 @@ import {
 import { cn } from "@/lib/utils";
 import { timeAgo } from "@/lib/utils";
 import { Pipeline, AGENT_TYPE_META, AgentType } from "@/lib/types";
-import { mockAccounts } from "@/lib/mock-data";
 
 // ---------------------------------------------------------------------------
 // Icon mapping: resolve string icon names from AGENT_TYPE_META to components
@@ -67,9 +66,7 @@ interface PipelineCardProps {
 }
 
 export function PipelineCard({ pipeline }: PipelineCardProps) {
-  const assignedAccounts = mockAccounts.filter((a) =>
-    pipeline.assignedAccountIds.includes(a.id),
-  );
+  const assignedCount = pipeline.assignedAccountIds.length;
 
   return (
     <Link
@@ -127,22 +124,11 @@ export function PipelineCard({ pipeline }: PipelineCardProps) {
 
       {/* Assigned accounts */}
       <div className="flex items-center gap-2">
-        {assignedAccounts.length > 0 ? (
+        {assignedCount > 0 ? (
           <>
             <Users className="h-4 w-4 text-[#64748B]" />
-            <div className="flex items-center -space-x-2">
-              {assignedAccounts.map((account) => (
-                <div
-                  key={account.id}
-                  className="h-7 w-7 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center border-2 border-[#111827] text-[10px] font-bold text-white"
-                  title={account.handle}
-                >
-                  {account.handle.replace("@", "").charAt(0).toUpperCase()}
-                </div>
-              ))}
-            </div>
             <span className="text-sm text-[#94A3B8]">
-              {assignedAccounts.map((a) => a.handle).join(", ")}
+              {assignedCount} {assignedCount === 1 ? "account" : "accounts"} assigned
             </span>
           </>
         ) : (

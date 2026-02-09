@@ -8,34 +8,22 @@ import { ActivityFeed } from "@/components/dashboard/activity-feed";
 import { Button } from "@/components/ui/button";
 import { GenerateContentModal } from "@/components/content/generate-content-modal";
 import { Plus, Sparkles } from "lucide-react";
-import { mockDashboardStats, mockAccounts, mockActivity } from "@/lib/mock-data";
+import type { InstagramAccount } from "@/lib/types";
 import { getAllContent } from "@/lib/content-store";
 import type { DashboardStats, ActivityItem } from "@/lib/types";
 
-interface ConnectionStatus {
-  provider: string;
-  connected: boolean;
-}
-
-function buildRealStats(): DashboardStats {
-  const allContent = getAllContent();
-  const totalPosts = allContent.length;
-  const postsThisWeek = totalPosts > 0 ? totalPosts : mockDashboardStats.postsThisWeek;
-
-  return {
-    ...mockDashboardStats,
-    postsThisWeek,
-    // Override totalAccounts if we have real connection data (set later)
-    totalAccounts: mockDashboardStats.totalAccounts,
-    // Keep mock values for metrics we can't compute from localStorage:
-    // totalFollowers, avgEngagementRate, creditsRemaining, followersGainedThisWeek
-  };
-}
+const DEFAULT_STATS: DashboardStats = {
+  totalAccounts: 0,
+  totalFollowers: 0,
+  avgEngagementRate: 0,
+  postsThisWeek: 0,
+  creditsRemaining: 10000,
+  followersGainedThisWeek: 0,
+};
 
 function buildRealActivity(): ActivityItem[] {
   const allContent = getAllContent();
 
-  // Create activity entries from real content, sorted newest first (already sorted by unshift in store)
   const realActivities: ActivityItem[] = allContent.slice(0, 10).map((item) => {
     const typeMap: Record<string, ActivityItem["type"]> = {
       generated: "content_generated",
@@ -60,61 +48,45 @@ function buildRealActivity(): ActivityItem[] {
     };
   });
 
-  if (realActivities.length === 0) {
-    return mockActivity;
-  }
-
-  // Blend: real activities first, then fill with mock to have a reasonable list
-  const combined = [...realActivities, ...mockActivity.slice(0, Math.max(0, 7 - realActivities.length))];
-  return combined.slice(0, 10);
+  return realActivities;
 }
 
 export default function DashboardPage() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [stats, setStats] = useState<DashboardStats>(mockDashboardStats);
-  const [activities, setActivities] = useState<ActivityItem[]>(mockActivity);
-  const [connections, setConnections] = useState<ConnectionStatus[]>([]);
+  const [stats, setStats] = useState<DashboardStats>(DEFAULT_STATS);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
 
   const refreshData = useCallback(() => {
-    setStats(buildRealStats());
     setActivities(buildRealActivity());
   }, []);
 
-  // Load real data on mount and after modal closes
+  // Load real data on mount
   useEffect(() => {
     refreshData();
   }, [refreshData]);
 
-  // Fetch connection status for instagram and youtube
+  // Fetch accounts from API
   useEffect(() => {
-    async function fetchConnections() {
-      const providers = ["instagram", "youtube"];
-      const results: ConnectionStatus[] = [];
-
-      for (const provider of providers) {
-        try {
-          const res = await fetch(`/api/nango/connections?provider=${provider}`);
-          if (res.ok) {
-            const data = await res.json();
-            results.push({ provider, connected: data.connected === true });
-          } else {
-            results.push({ provider, connected: false });
-          }
-        } catch {
-          results.push({ provider, connected: false });
+    fetch("/api/accounts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.accounts) {
+          const accs: InstagramAccount[] = data.accounts;
+          setAccounts(accs);
+          const totalFollowers = accs.reduce((sum: number, a: InstagramAccount) => sum + (a.followers || 0), 0);
+          const avgEngagement = accs.length > 0
+            ? accs.reduce((sum: number, a: InstagramAccount) => sum + (a.engagementRate || 0), 0) / accs.length
+            : 0;
+          setStats((prev) => ({
+            ...prev,
+            totalAccounts: accs.length,
+            totalFollowers,
+            avgEngagementRate: Math.round(avgEngagement * 10) / 10,
+          }));
         }
-      }
-
-      setConnections(results);
-
-      // Update totalAccounts based on real connections
-      const connectedCount = results.filter((c) => c.connected).length;
-      if (connectedCount > 0) {
-        setStats((prev) => ({ ...prev, totalAccounts: connectedCount }));
-      }
-    }
-
-    fetchConnections();
+      })
+      .catch(() => {});
   }, []);
 
   // Refresh content data when the modal closes (user may have generated content)
@@ -151,7 +123,7 @@ export default function DashboardPage() {
           <h2 className="text-lg font-semibold mb-4 text-[#F8FAFC]">
             Account Performance
           </h2>
-          <AccountMiniCards accounts={mockAccounts} />
+          <AccountMiniCards accounts={accounts} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

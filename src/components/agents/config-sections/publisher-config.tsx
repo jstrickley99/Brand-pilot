@@ -1,8 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import type { PublisherConfig as ConfigType } from "@/lib/types";
-import { mockAccounts } from "@/lib/mock-data";
+import type { PublisherConfig as ConfigType, InstagramAccount } from "@/lib/types";
 
 interface PublisherConfigProps {
   config: ConfigType | null;
@@ -15,6 +15,16 @@ const DEFAULT_CONFIG: ConfigType = {
 };
 
 export function PublisherConfig({ config, onChange }: PublisherConfigProps) {
+  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
+
+  useEffect(() => {
+    fetch("/api/accounts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAccounts(data.accounts);
+      })
+      .catch(() => {});
+  }, []);
   const current = config ?? DEFAULT_CONFIG;
 
   function update(partial: Partial<ConfigType>) {
@@ -38,7 +48,7 @@ export function PublisherConfig({ config, onChange }: PublisherConfigProps) {
           Publish To
         </label>
         <div className="space-y-2">
-          {mockAccounts.map((account) => (
+          {accounts.map((account) => (
             <label
               key={account.id}
               className={cn(

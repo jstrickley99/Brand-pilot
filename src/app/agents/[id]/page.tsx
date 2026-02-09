@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -19,10 +19,10 @@ import {
   Play,
   Copy,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { mockPipelines, mockAccounts } from "@/lib/mock-data";
-import type { Pipeline, AgentNode, AgentType, AIProvider, PipelineConnection, ExecutionMode } from "@/lib/types";
+import type { Pipeline, AgentNode, AgentType, AIProvider, PipelineConnection, ExecutionMode, InstagramAccount } from "@/lib/types";
 import { AGENT_TYPE_META } from "@/lib/types";
 import { PipelineCanvas } from "@/components/agents/pipeline-canvas";
 import { ConfigPanel } from "@/components/agents/config-panel";
@@ -42,9 +42,33 @@ interface PipelinePageProps {
 
 export default function PipelinePage({ params }: PipelinePageProps) {
   const { id } = use(params);
-  const sourcePipeline = mockPipelines.find((p) => p.id === id);
+  const [pipeline, setPipeline] = useState<Pipeline | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
-  if (!sourcePipeline) {
+  useEffect(() => {
+    fetch(`/api/pipelines/${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.pipeline) {
+          setPipeline(data.pipeline);
+        } else {
+          setNotFound(true);
+        }
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-[#3B82F6] animate-spin" />
+      </div>
+    );
+  }
+
+  if (notFound || !pipeline) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -62,7 +86,7 @@ export default function PipelinePage({ params }: PipelinePageProps) {
     );
   }
 
-  return <PipelinePageContent initialPipeline={sourcePipeline} />;
+  return <PipelinePageContent initialPipeline={pipeline} />;
 }
 
 function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline }) {
@@ -74,12 +98,45 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [mode, setMode] = useState<ExecutionMode>("build");
   const [aiProvider, setAiProvider] = useState<AIProvider>("anthropic");
+  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
+
+  // Fetch accounts from API
+  useEffect(() => {
+    fetch("/api/accounts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setAccounts(data.accounts);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Auto-save pipeline to DB (debounced)
+  const saveTimerRef = useState<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (saveTimerRef[0]) clearTimeout(saveTimerRef[0]);
+    const timer = setTimeout(() => {
+      fetch(`/api/pipelines/${pipeline.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: pipeline.name,
+          status: pipeline.status,
+          nodes: pipeline.nodes,
+          connections: pipeline.connections,
+          assignedAccountIds: pipeline.assignedAccountIds,
+        }),
+      }).catch(() => {});
+    }, 1000);
+    saveTimerRef[0] = timer;
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pipeline]);
 
   const selectedNode = selectedNodeId ? pipeline.nodes.find((n) => n.id === selectedNodeId) ?? null : null;
 
   // Resolve account context from assigned accounts
   const assignedAccount = pipeline.assignedAccountIds.length > 0
-    ? mockAccounts.find((a) => a.id === pipeline.assignedAccountIds[0])
+    ? accounts.find((a) => a.id === pipeline.assignedAccountIds[0])
     : null;
 
   const accountContext = assignedAccount
@@ -374,6 +431,7 @@ function PipelinePageContent({ initialPipeline }: { initialPipeline: Pipeline })
               <AssignAccounts
                 assignedAccountIds={pipeline.assignedAccountIds}
                 onAssign={handleAssignAccounts}
+                accounts={accounts}
               />
 
               {/* Pause/Resume */}
