@@ -101,6 +101,40 @@ export interface AnalyticsData {
   topPosts: ContentPost[];
 }
 
+// Agent Config — one autonomous agent per account
+export interface AgentConfig {
+  accountId: string;
+  niche: string;
+  topics: string[];
+  brandVoice: {
+    toneFormality: number;
+    toneHumor: number;
+    toneInspiration: number;
+    writingStyle: string;
+    emojiUsage: "none" | "minimal" | "moderate" | "heavy";
+    examplePosts: string[];
+  };
+  contentStrategy: {
+    contentMix: ContentMix;
+    postsPerDay: number;
+    contentTypes: ContentType[];
+    hashtagStrategy: "max_reach" | "niche_specific" | "mixed";
+  };
+  visualStyle: {
+    style: string;
+    brandColors: string[];
+    preferredFormats: ("reels" | "carousels" | "stories" | "single_image")[];
+  };
+  schedule: {
+    activeDays: string[];
+    postingWindowStart: string;
+    postingWindowEnd: string;
+    timezone: string;
+  };
+}
+
+export type AgentStatus = "setup" | "active" | "paused" | "error";
+
 // Agent & Pipeline types
 
 export type AgentType =
@@ -213,6 +247,7 @@ export interface Pipeline {
   nodes: AgentNode[];
   connections: PipelineConnection[];
   assignedAccountIds: string[];
+  agentConfig?: AgentConfig;
   createdAt: string;
   updatedAt: string;
 }

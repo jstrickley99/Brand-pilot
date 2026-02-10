@@ -2,6 +2,7 @@ import { supabase } from "./supabase";
 import type {
   Pipeline,
   AgentNode,
+  AgentConfig,
   PipelineConnection,
   ContentPost,
   InstagramAccount,
@@ -10,6 +11,35 @@ import type {
   Niche,
   AIProvider,
 } from "./types";
+
+// ---------------------------------------------------------------------------
+// Agent Config Meta-Node helpers
+// Store AgentConfig as a hidden node in the nodes JSONB array to avoid
+// needing a schema migration. The meta-node has type "__agent_config__".
+// ---------------------------------------------------------------------------
+
+const META_NODE_TYPE = "__agent_config__";
+
+function extractAgentConfig(nodes: unknown[]): { realNodes: AgentNode[]; agentConfig?: AgentConfig } {
+  const metaNode = (nodes as Array<Record<string, unknown>>).find(
+    (n) => n.type === META_NODE_TYPE
+  );
+  const realNodes = (nodes as AgentNode[]).filter(
+    (n) => (n as unknown as Record<string, unknown>).type !== META_NODE_TYPE
+  );
+  return {
+    realNodes,
+    agentConfig: metaNode ? (metaNode as unknown as { config: AgentConfig }).config : undefined,
+  };
+}
+
+function injectAgentConfig(nodes: AgentNode[], agentConfig?: AgentConfig): unknown[] {
+  if (!agentConfig) return nodes;
+  return [
+    ...nodes,
+    { type: META_NODE_TYPE, id: "__meta__", config: agentConfig },
+  ];
+}
 
 // ---------------------------------------------------------------------------
 // User Settings
@@ -137,16 +167,20 @@ export async function getPipelines(userId: string): Promise<Pipeline[]> {
 
   if (error || !data) return [];
 
-  return data.map((row) => ({
-    id: row.id,
-    name: row.name,
-    status: row.status as Pipeline["status"],
-    nodes: (row.nodes as AgentNode[]) || [],
-    connections: (row.connections as PipelineConnection[]) || [],
-    assignedAccountIds: row.assigned_account_ids || [],
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }));
+  return data.map((row) => {
+    const { realNodes, agentConfig } = extractAgentConfig((row.nodes as unknown[]) || []);
+    return {
+      id: row.id,
+      name: row.name,
+      status: row.status as Pipeline["status"],
+      nodes: realNodes,
+      connections: (row.connections as PipelineConnection[]) || [],
+      assignedAccountIds: row.assigned_account_ids || [],
+      agentConfig,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  });
 }
 
 export async function getPipeline(userId: string, pipelineId: string): Promise<Pipeline | null> {
@@ -159,28 +193,35 @@ export async function getPipeline(userId: string, pipelineId: string): Promise<P
 
   if (error || !data) return null;
 
+  const { realNodes, agentConfig } = extractAgentConfig((data.nodes as unknown[]) || []);
   return {
     id: data.id,
     name: data.name,
     status: data.status as Pipeline["status"],
-    nodes: (data.nodes as AgentNode[]) || [],
+    nodes: realNodes,
     connections: (data.connections as PipelineConnection[]) || [],
     assignedAccountIds: data.assigned_account_ids || [],
+    agentConfig,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
   };
 }
 
-export async function createPipeline(userId: string, name: string): Promise<string | null> {
+export async function createPipeline(
+  userId: string,
+  name: string,
+  agentConfig?: AgentConfig
+): Promise<string | null> {
+  const nodes = agentConfig ? injectAgentConfig([], agentConfig) : [];
   const { data, error } = await supabase
     .from("pipelines")
     .insert({
       user_id: userId,
       name,
-      status: "draft",
-      nodes: [],
+      status: agentConfig ? "active" : "draft",
+      nodes,
       connections: [],
-      assigned_account_ids: [],
+      assigned_account_ids: agentConfig ? [agentConfig.accountId] : [],
     })
     .select("id")
     .single();
@@ -198,12 +239,18 @@ export async function updatePipeline(
     nodes?: AgentNode[];
     connections?: PipelineConnection[];
     assignedAccountIds?: string[];
+    agentConfig?: AgentConfig;
   }
 ): Promise<boolean> {
   const payload: Record<string, unknown> = {};
   if (updates.name !== undefined) payload.name = updates.name;
   if (updates.status !== undefined) payload.status = updates.status;
-  if (updates.nodes !== undefined) payload.nodes = updates.nodes;
+  if (updates.nodes !== undefined) payload.nodes = injectAgentConfig(updates.nodes, updates.agentConfig);
+  else if (updates.agentConfig !== undefined) {
+    // Need to read current nodes to inject config
+    const current = await getPipeline(userId, pipelineId);
+    payload.nodes = injectAgentConfig(current?.nodes || [], updates.agentConfig);
+  }
   if (updates.connections !== undefined) payload.connections = updates.connections;
   if (updates.assignedAccountIds !== undefined) payload.assigned_account_ids = updates.assignedAccountIds;
 

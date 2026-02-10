@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json();
   const name = body.name || "Untitled Pipeline";
-  const id = await createPipeline(userId, name);
+  const id = await createPipeline(userId, name, body.agentConfig);
 
   if (!id) {
     return NextResponse.json({ success: false, error: "Failed to create pipeline" }, { status: 500 });
