@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { Nango } from "@nangohq/node";
 import { auth } from "@clerk/nextjs/server";
 
-const nango = new Nango({ secretKey: process.env.NANGO_SECRET_KEY! });
+function isNangoConfigured(): boolean {
+  const key = process.env.NANGO_SECRET_KEY;
+  return !!key && key !== "your-nango-secret-key" && key.length > 10;
+}
 
 export async function GET(request: NextRequest) {
   const { userId } = await auth();
@@ -13,6 +16,16 @@ export async function GET(request: NextRequest) {
       { status: 401 }
     );
   }
+
+  if (!isNangoConfigured()) {
+    return NextResponse.json({
+      success: true,
+      connected: false,
+      provider: request.nextUrl.searchParams.get("provider") || "instagram",
+    });
+  }
+
+  const nango = new Nango({ secretKey: process.env.NANGO_SECRET_KEY! });
 
   try {
     const providerConfigKey = request.nextUrl.searchParams.get("provider") || "instagram";

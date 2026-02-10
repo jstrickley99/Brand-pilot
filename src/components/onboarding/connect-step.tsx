@@ -45,12 +45,7 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
       await hook.connect();
       return;
     }
-
-    // Mock flow for other platforms
-    setConnecting(platformId);
-    await new Promise((resolve) => setTimeout(resolve, 1200 + Math.random() * 800));
-    onToggle(platformId);
-    setConnecting(null);
+    // Platforms without OAuth integration can't connect yet
   }
 
   function handleDisconnectClick(platformId: string) {
@@ -103,12 +98,12 @@ export function ConnectStep({ connectedPlatforms, onToggle }: ConnectStepProps) 
                         @{hook.connection.username}
                       </p>
                     )}
-                    {conn.infoNotice && !conn.requiresPro && (
+                    {conn.infoNotice && (
                       <p className="text-xs text-[#94A3B8]/70 mt-1">{conn.infoNotice}</p>
                     )}
                     {conn.requiresPro && (
                       <span className="inline-flex items-center gap-1 mt-1 text-xs text-yellow-400">
-                        <Lock className="h-3 w-3" /> Pro plan required
+                        <Lock className="h-3 w-3" /> {conn.infoNotice === "Coming soon" ? "Coming soon" : "Pro plan required"}
                       </span>
                     )}
                   </div>

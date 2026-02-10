@@ -361,6 +361,8 @@ export const mockPlatformConnections: PlatformConnection[] = [
     platform: "facebook",
     connected: false,
     description: "Connect your Facebook Page to publish and schedule posts.",
+    infoNotice: "Coming soon",
+    requiresPro: true,
   },
   {
     id: "tt",
