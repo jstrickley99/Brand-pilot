@@ -11,9 +11,9 @@ import { NodeConnection } from "./node-connection";
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 2;
 const ZOOM_STEP = 0.1;
-const NODE_WIDTH = 180;
-const NODE_HEIGHT = 72;
-const CONNECTOR_OFFSET_X = 6;
+const NODE_WIDTH = 260;
+const NODE_HEIGHT = 100;
+const CONNECTOR_OFFSET_X = 7;
 const START_NODE_SIZE = 64;
 
 interface PipelineCanvasProps {
@@ -212,8 +212,9 @@ export function PipelineCanvas({
       )}
       style={{
         backgroundColor: "#0B0F19",
-        backgroundImage: "radial-gradient(circle, #1E293B 1px, transparent 1px)",
-        backgroundSize: "24px 24px",
+        backgroundImage:
+          "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+        backgroundSize: "20px 20px, 20px 20px, 100px 100px, 100px 100px",
       }}
       onWheel={handleWheel}
       onMouseDown={handleCanvasMouseDown}

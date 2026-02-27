@@ -13,6 +13,7 @@ import {
   Check,
   X,
   Loader2,
+  ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { AgentNode, AgentNodeStatus, NodeRunStatus } from "@/lib/types";
@@ -33,6 +34,12 @@ const statusColors: Record<AgentNodeStatus, string> = {
   unconfigured: "#F97316",
   configured: "#10B981",
   error: "#EF4444",
+};
+
+const statusLabels: Record<AgentNodeStatus, string> = {
+  unconfigured: "Setup needed",
+  configured: "Ready",
+  error: "Error",
 };
 
 interface CanvasNodeProps {
@@ -72,7 +79,7 @@ export function CanvasNode({
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isExecutionMode) return; // No dragging in execution mode
+      if (isExecutionMode) return;
       if ((e.target as HTMLElement).dataset.connector) return;
 
       e.stopPropagation();
@@ -127,7 +134,7 @@ export function CanvasNode({
     ? "border-[#EF4444] shadow-lg shadow-[#EF4444]/10"
     : isSelected
     ? "border-[#3B82F6] shadow-lg shadow-[#3B82F6]/10"
-    : "border-[#1E293B] hover:border-[#334155]";
+    : "border-[#1E293B] hover:border-[#475569] hover:shadow-lg hover:shadow-black/20";
 
   // Status dot rendering
   const renderStatusDot = () => {
@@ -158,7 +165,6 @@ export function CanvasNode({
           <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827] bg-[#94A3B8]" />
         );
       }
-      // Idle
       return (
         <div className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#111827] bg-[#475569]" />
       );
@@ -176,7 +182,7 @@ export function CanvasNode({
   return (
     <div
       className={cn(
-        "absolute group bg-[#111827] border rounded-xl p-4 min-w-[180px] transition-all duration-150 select-none",
+        "absolute group bg-[#111827] border-2 rounded-xl w-[260px] transition-all duration-150 select-none",
         isExecutionMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         borderClass,
         isRunning && "exec-node-pulse",
@@ -213,9 +219,9 @@ export function CanvasNode({
       <div
         data-connector="input"
         className={cn(
-          "absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#0B0F19] transition-transform",
+          "absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#0B0F19] transition-transform",
           isComplete ? "bg-[#10B981]" : isRunning ? "bg-[#3B82F6]" : "bg-[#3B82F6]",
-          !isExecutionMode && "hover:scale-125"
+          !isExecutionMode && "hover:scale-150"
         )}
       />
 
@@ -223,33 +229,62 @@ export function CanvasNode({
       <div
         data-connector="output"
         className={cn(
-          "absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-[#0B0F19] transition-transform",
+          "absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full border-2 border-[#0B0F19] transition-transform",
           isComplete ? "bg-[#10B981]" : isRunning ? "bg-[#3B82F6]" : "bg-[#3B82F6]",
-          !isExecutionMode && "hover:scale-125"
+          !isExecutionMode && "hover:scale-150"
         )}
       />
 
-      {/* Node content */}
-      <div className="flex items-start gap-3">
+      {/* Top section: icon + name + accent bar */}
+      <div
+        className="flex items-center gap-3 px-4 pt-3.5 pb-2"
+      >
         <div
-          className="flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center"
-          style={{ backgroundColor: `${accentColor}15` }}
+          className="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: `${accentColor}18` }}
         >
           {IconComponent && (
             <IconComponent
-              className="w-4.5 h-4.5"
+              className="w-5 h-5"
               style={{ color: accentColor }}
             />
           )}
         </div>
-        <div className="min-w-0">
-          <p className="text-sm font-medium text-[#F8FAFC] truncate max-w-[140px]">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-[#F8FAFC] truncate">
             {node.name}
           </p>
-          <p className="text-xs text-[#64748B] mt-0.5">
+          <p className="text-[11px] text-[#64748B] mt-0.5">
             {meta?.label ?? node.type}
           </p>
         </div>
+        <ChevronRight className="w-4 h-4 text-[#475569] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+      </div>
+
+      {/* Description */}
+      {meta?.description && (
+        <p className="text-[11px] text-[#94A3B8] leading-relaxed px-4 pb-1 line-clamp-2">
+          {meta.description}
+        </p>
+      )}
+
+      {/* Bottom status bar */}
+      <div className="flex items-center justify-between px-4 py-2 mt-1 border-t border-[#1E293B]/60">
+        <div className="flex items-center gap-1.5">
+          <div
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ backgroundColor: statusColors[node.status] }}
+          />
+          <span
+            className="text-[10px] font-medium"
+            style={{ color: statusColors[node.status] }}
+          >
+            {statusLabels[node.status]}
+          </span>
+        </div>
+        <span className="text-[10px] text-[#475569] group-hover:text-[#64748B] transition-colors">
+          Click to configure
+        </span>
       </div>
     </div>
   );

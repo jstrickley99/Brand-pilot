@@ -994,7 +994,7 @@ function PipelineEditView({
         id: newNodeId,
         type,
         name: meta?.label ?? type,
-        position: { x: 300 + pipeline.nodes.length * 250, y: 200 },
+        position: { x: 300 + pipeline.nodes.length * 320, y: 200 },
         config: null,
         status: "unconfigured",
         autonomyLevel: "approval_required",
