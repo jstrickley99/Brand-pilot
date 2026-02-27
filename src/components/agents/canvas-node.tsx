@@ -7,6 +7,9 @@ import {
   Image,
   Clock,
   Send,
+  Hash,
+  MessageCircle,
+  BarChart3,
   Check,
   X,
   Loader2,
@@ -21,6 +24,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string; style?: 
   Image,
   Clock,
   Send,
+  Hash,
+  MessageCircle,
+  BarChart3,
 };
 
 const statusColors: Record<AgentNodeStatus, string> = {
